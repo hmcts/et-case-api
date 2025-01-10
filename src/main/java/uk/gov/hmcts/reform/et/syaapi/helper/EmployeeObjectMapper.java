@@ -54,10 +54,11 @@ public class EmployeeObjectMapper {
         return mapper.convertValue(caseData, CaseData.class);
     }
 
-    /**
-     * Converts caseData from Map to {@link CaseData} object.
-     * @param caseData to be converted
-     * @return case data wrapped in {@link CaseData} format
+   /**
+     * Converts caseData map to {@link CaseData} model object.
+     *
+     * @param caseData String-Object map to be converted
+     * @return case data wrapped in {@link CaseData} model instance format
      */
     public static CaseData convertCaseDataMapToCaseDataObject(Map<String, Object> caseData) {
         return getCaseData(caseData);
