@@ -279,19 +279,28 @@ public class CaseService {
      */
     public CaseDetails triggerEvent(String authorization, String caseId, CaseEvent eventName,
                                     String caseType, Map<String, Object> caseData) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        CaseDetailsConverter caseDetailsConverter = new CaseDetailsConverter(objectMapper);
+        if (authorization == null || caseId == null || caseType == null || eventName == null || caseData == null) {
+            log.error("Invalid input parameters for triggerEvent");
+            return null;
+        }
         StartEventResponse startEventResponse = startUpdate(authorization, caseId, caseType, eventName);
-        CaseData caseData1 = EmployeeObjectMapper.convertCaseDataMapToCaseDataObject(caseData);
+        CaseDetails latestCaseDetails = startEventResponse.getCaseDetails();
+        if (latestCaseDetails == null) {
+            log.error("Failed to retrieve case details from startEventResponse for caseId: {}", caseId);
+            return null;
+        }
+
+        CaseDetailsConverter caseDetailsConverter = new CaseDetailsConverter(new ObjectMapper());
+        CaseData latestCaseData = caseDetailsConverter.getUpdatedCaseData(caseData, latestCaseDetails.getData());
 
         if (SUBMIT_CASE_DRAFT == eventName) {
-            enrichCaseDataWithJurisdictionCodes(caseData1);
+            enrichCaseDataWithJurisdictionCodes(latestCaseData);
         }
 
         return submitUpdate(
             authorization,
             caseId,
-            caseDetailsConverter.et1ToCaseDataContent(startEventResponse, caseData1),
+            caseDetailsConverter.et1ToCaseDataContent(startEventResponse, latestCaseData),
             caseType
         );
     }
@@ -390,6 +399,9 @@ public class CaseService {
     }
 
     private void enrichCaseDataWithJurisdictionCodes(CaseData caseData) {
+        if (caseData == null) {
+            return;
+        }
         List<JurCodesTypeItem> jurCodesTypeItems = jurisdictionCodesMapper.mapToJurCodes(caseData);
         caseData.setJurCodesCollection(jurCodesTypeItems);
     }
