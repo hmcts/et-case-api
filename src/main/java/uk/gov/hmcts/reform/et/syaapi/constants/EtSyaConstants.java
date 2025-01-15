@@ -71,6 +71,7 @@ public final class EtSyaConstants {
     public static final String UNASSIGNED_OFFICE = "Unassigned";
 
     public static final String CLAIMANT_CORRESPONDENCE_DOCUMENT = "Claimant correspondence";
+    public static final String RESPONDENT_CORRESPONDENCE_DOCUMENT = "Respondent correspondence";
     public static final String YES = "Yes";
     public static final String NO = "No";
 

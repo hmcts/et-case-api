@@ -13,6 +13,7 @@ import org.mockito.quality.Strictness;
 import uk.gov.hmcts.ecm.common.service.pdf.PdfDecodedMultipartFile;
 import uk.gov.hmcts.ecm.common.service.pdf.PdfService;
 import uk.gov.hmcts.et.common.model.ccd.items.GenericTseApplicationType;
+import uk.gov.hmcts.et.common.model.ccd.types.RespondentTse;
 import uk.gov.hmcts.et.common.model.ccd.types.citizenhub.ClaimantTse;
 import uk.gov.hmcts.reform.et.syaapi.model.CaseTestData;
 import uk.gov.hmcts.reform.et.syaapi.models.AcasCertificate;
@@ -173,5 +174,29 @@ class PdfUploadServiceTest {
             pdfUploadService.convertAcasCertificatesToPdfDecodedMultipartFiles(
                 caseTestData.getCaseData(), acasCertificates);
         assertThat(pdfDecodedMultipartFiles).isEmpty();
+    }
+
+    @Test
+    void shouldCreatePdfDecodedMultipartFileFromRespTseApplication() throws DocumentGenerationException {
+        caseTestData.getCaseData().setRespondentTse(new RespondentTse());
+        PdfDecodedMultipartFile pdfDecodedMultipartFile =
+            pdfUploadService.convertRespondentTseIntoMultipartFile(
+                caseTestData.getRespondentTse(),
+                caseTestData.getCaseData().getEthosCaseReference(),
+                "customDocName.pdf");
+
+        assertThat(pdfDecodedMultipartFile).isNotNull();
+    }
+
+    @Test
+    void shouldCreatePdfDecodedMultipartFileFromRespTseApplicationNoSupportingFile() throws DocumentGenerationException {
+        caseTestData.getRespondentTse().setContactApplicationFile(null);
+        PdfDecodedMultipartFile pdfDecodedMultipartFile =
+            pdfUploadService.convertRespondentTseIntoMultipartFile(
+                caseTestData.getRespondentTse(),
+                caseTestData.getCaseData().getEthosCaseReference(),
+                "customDocName.pdf");
+
+        assertThat(pdfDecodedMultipartFile).isNotNull();
     }
 }

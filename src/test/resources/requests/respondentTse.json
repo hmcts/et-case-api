@@ -1,0 +1,11 @@
+{
+  "contactApplicationType": "Amend response",
+  "contactApplicationText": "1",
+  "contactApplicationFile": {
+    "document_binary_url": "https://document.binary.url/36c8b8b7-2f73-4ba6-968c-1e4863127001",
+    "document_filename": "filename.pdf",
+    "document_url": "https://document.url/36c8b8b7-2f73-4ba6-968c-1e4863127001"
+  },
+  "copyToOtherPartyYesOrNo": "No",
+  "copyToOtherPartyText": "3"
+}

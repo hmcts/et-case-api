@@ -13,6 +13,7 @@ import uk.gov.hmcts.ecm.common.service.pdf.PdfService;
 import uk.gov.hmcts.et.common.model.ccd.CaseData;
 import uk.gov.hmcts.et.common.model.ccd.items.GenericTseApplicationType;
 import uk.gov.hmcts.et.common.model.ccd.items.RespondentSumTypeItem;
+import uk.gov.hmcts.et.common.model.ccd.types.RespondentTse;
 import uk.gov.hmcts.et.common.model.ccd.types.TseRespondType;
 import uk.gov.hmcts.et.common.model.ccd.types.citizenhub.ClaimantTse;
 import uk.gov.hmcts.reform.et.syaapi.models.AcasCertificate;
@@ -23,6 +24,7 @@ import uk.gov.hmcts.reform.et.syaapi.service.DocumentGenerationException;
 import uk.gov.hmcts.reform.et.syaapi.service.DocumentGenerationService;
 import uk.gov.hmcts.reform.et.syaapi.service.utils.ClaimantTseUtil;
 import uk.gov.hmcts.reform.et.syaapi.service.utils.GenericServiceUtil;
+import uk.gov.hmcts.reform.et.syaapi.service.utils.RespondentTseUtil;
 import uk.gov.hmcts.reform.idam.client.models.UserInfo;
 
 import java.time.LocalDate;
@@ -291,5 +293,37 @@ public class PdfUploadService {
             sanitizedName = sanitizedName.replace(charToReplace, " ");
         }
         return sanitizedName;
+    }
+
+    /**
+     * Converts a given object of type {@link ClaimantTse} to a {@link PdfDecodedMultipartFile}.
+     * Firstly by converting to a pdf byte array and then wrapping within the return object.
+     *
+     * @param respondentTse {@link CaseData} object that contains the {@link ClaimantTse} object to be converted.
+     * @return {@link PdfDecodedMultipartFile} with the claimant tse CYA page in pdf format.
+     * @throws DocumentGenerationException if there is an error generating the PDF.
+     */
+    public PdfDecodedMultipartFile convertRespondentTseIntoMultipartFile(
+        RespondentTse respondentTse,
+        String caseReference,
+        String docName)
+
+        throws DocumentGenerationException {
+
+        GenericTseApplication genericTseApplication =
+            RespondentTseUtil.getGenericTseApplicationFromRespondentTse(respondentTse, caseReference);
+
+        byte[] tseApplicationPdf = documentGenerationService.genPdfDocument(
+            contactTheTribunalPdfTemplate,
+            docName,
+            genericTseApplication
+        );
+
+        return new PdfDecodedMultipartFile(
+            tseApplicationPdf,
+            docName,
+            PDF_FILE_TIKA_CONTENT_TYPE,
+            TSE_FILENAME + APP_TYPE_MAP.get(respondentTse.getContactApplicationType())
+        );
     }
 }

@@ -39,6 +39,7 @@ import static uk.gov.hmcts.ecm.common.model.helper.DocumentConstants.CHANGE_OF_P
 import static uk.gov.hmcts.ecm.common.model.helper.DocumentConstants.CONTACT_THE_TRIBUNAL_C;
 import static uk.gov.hmcts.ecm.common.model.helper.DocumentConstants.R_HAS_NOT_COMPLIED_WITH_AN_ORDER_C;
 import static uk.gov.hmcts.ecm.common.model.helper.DocumentConstants.WITHDRAWAL_OF_ALL_OR_PART_CLAIM;
+import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.CLAIMANT;
 import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.setRespondentApplicationWithResponse;
 
 class TseApplicationHelperTest {
@@ -116,7 +117,8 @@ class TseApplicationHelperTest {
             DocumentTypeItem docType = DocumentTypeItem.builder().id("1").value(new DocumentType()).build();
             when(caseDocumentService.createDocumentTypeItem(any(), any())).thenReturn(docType);
 
-            setRespondentApplicationWithResponse(request, app, caseData, caseDocumentService, true);
+            setRespondentApplicationWithResponse(request, app, caseData, caseDocumentService,
+                                                 true, CLAIMANT);
 
             Assertions.assertEquals("waitingForTheTribunal", app.getApplicationState());
             Assertions.assertEquals("Response to Amend response",

@@ -17,6 +17,7 @@ import uk.gov.hmcts.et.common.model.ccd.items.DocumentTypeItem;
 import uk.gov.hmcts.et.common.model.ccd.items.GenericTseApplicationType;
 import uk.gov.hmcts.et.common.model.ccd.items.JurCodesTypeItem;
 import uk.gov.hmcts.et.common.model.ccd.types.DocumentType;
+import uk.gov.hmcts.et.common.model.ccd.types.RespondentTse;
 import uk.gov.hmcts.et.common.model.ccd.types.UploadedDocumentType;
 import uk.gov.hmcts.et.common.model.ccd.types.citizenhub.ClaimantTse;
 import uk.gov.hmcts.reform.authorisation.generators.AuthTokenGenerator;
@@ -58,12 +59,15 @@ import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.CLAIMANT_CO
 import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.DEFAULT_TRIBUNAL_OFFICE;
 import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.ENGLAND_CASE_TYPE;
 import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.JURISDICTION_ID;
+import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.RESPONDENT_CORRESPONDENCE_DOCUMENT;
 import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.SCOTLAND_CASE_TYPE;
 import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.UNASSIGNED_OFFICE;
 import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.YES;
 import static uk.gov.hmcts.reform.et.syaapi.enums.CaseEvent.INITIATE_CASE_DRAFT;
 import static uk.gov.hmcts.reform.et.syaapi.enums.CaseEvent.SUBMIT_CASE_DRAFT;
 import static uk.gov.hmcts.reform.et.syaapi.enums.CaseEvent.UPDATE_CASE_SUBMITTED;
+import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.CLAIMANT;
+
 /**
  * Provides read and write access to cases stored by ET.
  */
@@ -395,7 +399,7 @@ public class CaseService {
     }
 
     void uploadTseSupportingDocument(CaseDetails caseDetails, UploadedDocumentType contactApplicationFile,
-                                     String contactApplicationType) {
+                                     String contactApplicationType, String userType) {
         CaseData caseData = EmployeeObjectMapper.convertCaseDataMapToCaseDataObject(caseDetails.getData());
         List<DocumentTypeItem> docList = caseData.getDocumentCollection();
 
@@ -407,15 +411,29 @@ public class CaseService {
             ApplicationService.getNextApplicationNumber(caseData),
             APP_TYPE_MAP.get(contactApplicationType),
             extension);
-        String applicationDocMapping =
-            DocumentHelper.claimantApplicationTypeToDocType(contactApplicationType);
+
+        String applicationDocMapping;
+        String typeOfDocument;
+        String shortDescription;
+        if (userType.equals(CLAIMANT)) {
+            applicationDocMapping = DocumentHelper.claimantApplicationTypeToDocType(contactApplicationType);
+            typeOfDocument = CLAIMANT_CORRESPONDENCE_DOCUMENT;
+            shortDescription = APP_TYPE_MAP.get(contactApplicationType);
+        } else {
+            applicationDocMapping = DocumentHelper.respondentApplicationToDocType(contactApplicationType);
+            typeOfDocument = RESPONDENT_CORRESPONDENCE_DOCUMENT;
+            shortDescription = contactApplicationType;
+        }
+
         String topLevel = DocumentHelper.getTopLevelDocument(applicationDocMapping);
         contactApplicationFile.setDocumentFilename(docName);
+
+
         DocumentType documentType = DocumentType.builder()
             .topLevelDocuments(topLevel)
-            .typeOfDocument(CLAIMANT_CORRESPONDENCE_DOCUMENT)
+            .typeOfDocument(typeOfDocument)
             .uploadedDocument(contactApplicationFile)
-            .shortDescription(APP_TYPE_MAP.get(contactApplicationType))
+            .shortDescription(shortDescription)
             .dateOfCorrespondence(LocalDate.now().toString())
             .build();
         DocumentHelper.setSecondLevelDocumentFromType(documentType, applicationDocMapping);
@@ -512,5 +530,41 @@ public class CaseService {
         return triggerEvent(authorization, caseRequest.getCaseId(), UPDATE_CASE_SUBMITTED,
                             caseRequest.getCaseTypeId(), caseRequest.getCaseData()
         );
+    }
+
+    void uploadRespondentTseAsPdf(
+        String authorization,
+        CaseDetails caseDetails,
+        RespondentTse respondentTse,
+        String caseType
+    ) throws DocumentGenerationException, CaseDocumentException {
+
+        CaseData caseData = EmployeeObjectMapper.convertCaseDataMapToCaseDataObject(caseDetails.getData());
+        List<DocumentTypeItem> docList = caseData.getDocumentCollection();
+
+        if (docList == null) {
+            docList = new ArrayList<>();
+        }
+
+        String docName = "Application %d - %s.pdf".formatted(
+            ApplicationService.getNextApplicationNumber(caseData),
+            respondentTse.getContactApplicationType()).replace("/", " or ");
+        PdfDecodedMultipartFile pdfDecodedMultipartFile =
+            pdfUploadService.convertRespondentTseIntoMultipartFile(respondentTse,
+                                                                 caseData.getEthosCaseReference(),
+                                                                 docName);
+        String applicationDocMapping = respondentTse.getContactApplicationType();
+        String topLevel = DocumentHelper.getTopLevelDocument(applicationDocMapping);
+
+        docList.add(caseDocumentService.createDocumentTypeItemLevels(
+            authorization,
+            caseType,
+            topLevel,
+            applicationDocMapping,
+            CASE_MANAGEMENT_DOC_CATEGORY,
+            pdfDecodedMultipartFile
+        ));
+
+        caseDetails.getData().put(DOCUMENT_COLLECTION, docList);
     }
 }

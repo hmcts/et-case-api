@@ -1318,8 +1318,8 @@ class NotificationServiceTest {
         when(claimantApplication.getContactApplicationType()).thenReturn(contactType);
         when(claimantApplication.getCopyToOtherPartyYesOrNo()).thenReturn(copyTo);
 
-        String emailTemplate = notificationService.getAndSetRule92EmailTemplate(
-            claimantApplication, details.hearingDate(), params, isWelsh);
+        String emailTemplate = notificationService.getAndSetEmailTemplate(
+            claimantApplication, details.hearingDate(), params, isWelsh, false);
 
         assertEquals(expectedTemplateId, emailTemplate);
     }

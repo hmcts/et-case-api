@@ -92,7 +92,7 @@ class ApplicationServiceTest {
 
         when(featureToggleService.isWorkAllocationEnabled()).thenReturn(true);
 
-        doNothing().when(caseService).uploadTseSupportingDocument(any(), any(), any());
+        doNothing().when(caseService).uploadTseSupportingDocument(any(), any(), any(), any());
         doNothing().when(caseService).uploadTseCyaAsPdf(any(), any(), any(), any());
 
         when(caseService.triggerEvent(

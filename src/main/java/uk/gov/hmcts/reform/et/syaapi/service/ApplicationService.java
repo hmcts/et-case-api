@@ -11,6 +11,7 @@ import uk.gov.hmcts.et.common.model.ccd.items.GenericTseApplicationType;
 import uk.gov.hmcts.et.common.model.ccd.items.GenericTseApplicationTypeItem;
 import uk.gov.hmcts.et.common.model.ccd.items.TseRespondTypeItem;
 import uk.gov.hmcts.et.common.model.ccd.types.ClaimantIndType;
+import uk.gov.hmcts.et.common.model.ccd.types.RespondentTse;
 import uk.gov.hmcts.et.common.model.ccd.types.UploadedDocumentType;
 import uk.gov.hmcts.et.common.model.ccd.types.citizenhub.ClaimantTse;
 import uk.gov.hmcts.reform.ccd.client.model.CaseDataContent;
@@ -24,6 +25,7 @@ import uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper;
 import uk.gov.hmcts.reform.et.syaapi.models.ChangeApplicationStatusRequest;
 import uk.gov.hmcts.reform.et.syaapi.models.ClaimantApplicationRequest;
 import uk.gov.hmcts.reform.et.syaapi.models.RespondToApplicationRequest;
+import uk.gov.hmcts.reform.et.syaapi.models.RespondentApplicationRequest;
 import uk.gov.hmcts.reform.et.syaapi.models.TribunalResponseViewedRequest;
 import uk.gov.hmcts.reform.et.syaapi.service.NotificationService.CoreEmailDetails;
 import uk.gov.service.notify.NotificationClient;
@@ -38,6 +40,8 @@ import static uk.gov.hmcts.ecm.common.model.helper.Constants.IN_PROGRESS;
 import static uk.gov.hmcts.ecm.common.model.helper.Constants.NO;
 import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.YES;
 import static uk.gov.hmcts.reform.et.syaapi.helper.NotificationsHelper.getRespondentNames;
+import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.CLAIMANT;
+import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.RESPONDENT;
 import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.setRespondentApplicationWithResponse;
 
 @RequiredArgsConstructor
@@ -100,8 +104,8 @@ public class ApplicationService {
         if (contactApplicationFile != null) {
             log.info("Uploading supporting file to document collection");
             caseService.uploadTseSupportingDocument(caseDetails, contactApplicationFile,
-                                                    claimantTse.getContactApplicationType()
-            );
+                                                    claimantTse.getContactApplicationType(),
+                                                    CLAIMANT);
         }
 
         CaseData caseData = EmployeeObjectMapper
@@ -142,35 +146,7 @@ public class ApplicationService {
             CaseEvent.CLAIMANT_TSE_RESPOND
         );
 
-        CaseData caseData = EmployeeObjectMapper
-            .convertCaseDataMapToCaseDataObject(startEventResponse.getCaseDetails().getData());
-
-        GenericTseApplicationTypeItem appToModify = TseApplicationHelper.getSelectedApplication(
-            caseData.getGenericTseApplicationCollection(), request.getApplicationId()
-        );
-
-        if (appToModify == null) {
-            throw new IllegalArgumentException("Application id provided is incorrect");
-        }
-
-        String copyToOtherParty = request.getResponse().getCopyToOtherParty();
-        GenericTseApplicationType appType = appToModify.getValue();
-
-        boolean isRespondingToTribunal = request.isRespondingToRequestOrOrder();
-        if (isRespondingToTribunal) {
-            appType.setApplicationState(IN_PROGRESS);
-            appType.setClaimantResponseRequired(NO);
-        }
-
-        sendResponseToApplicationEmails(appType, caseData, caseId, copyToOtherParty, isRespondingToTribunal);
-
-        boolean waEnabled = featureToggleService.isWorkAllocationEnabled();
-        setRespondentApplicationWithResponse(request, appType, caseData, caseDocumentService, waEnabled);
-
-        createAndAddPdfOfResponse(authorization, request, caseData, appType);
-
-        return caseService.submitUpdate(
-            authorization, caseId, caseDetailsConverter.caseDataContent(startEventResponse, caseData), caseTypeId);
+        return submitResponseForApplication(authorization, request, caseId, caseTypeId, startEventResponse, CLAIMANT);
     }
 
     /**
@@ -279,16 +255,8 @@ public class ApplicationService {
         CaseDetails finalCaseDetails
     ) throws NotificationClientException {
         CaseData caseData = EmployeeObjectMapper.convertCaseDataMapToCaseDataObject(finalCaseDetails.getData());
-        ClaimantIndType claimantIndType = caseData.getClaimantIndType();
-        String hearingDate = NotificationsHelper.getNearestHearingToReferral(caseData, "Not set");
-        CoreEmailDetails details = new CoreEmailDetails(
-            caseData,
-            claimantIndType.getClaimantFirstNames() + " " + claimantIndType.getClaimantLastName(),
-            caseData.getEthosCaseReference(),
-            getRespondentNames(caseData),
-            hearingDate,
-            finalCaseDetails.getId().toString()
-        );
+        String caseId = finalCaseDetails.getId().toString();
+        CoreEmailDetails details = prepareAcknowledgementEmailDetails(caseData, caseId);
 
         ClaimantTse claimantTse = request.getClaimantTse();
         JSONObject documentJson = getDocumentDownload(authorization, caseData);
@@ -296,6 +264,37 @@ public class ApplicationService {
         notificationService.sendAcknowledgementEmailToClaimant(details, claimantTse);
         notificationService.sendAcknowledgementEmailToRespondents(details, documentJson, claimantTse);
         notificationService.sendAcknowledgementEmailToTribunal(details, claimantTse.getContactApplicationType());
+    }
+
+    private void sendRespondentAppAcknowledgementEmails(
+        String authorization,
+        RespondentApplicationRequest request,
+        CaseDetails finalCaseDetails
+    ) throws NotificationClientException {
+        CaseData caseData = EmployeeObjectMapper.convertCaseDataMapToCaseDataObject(finalCaseDetails.getData());
+        String caseId = finalCaseDetails.getId().toString();
+        CoreEmailDetails details = prepareAcknowledgementEmailDetails(caseData, caseId);
+
+        RespondentTse respondentTse = request.getRespondentTse();
+        JSONObject documentJson = getDocumentDownload(authorization, caseData);
+
+        notificationService.sendRespondentAppAcknowledgementEmailToRespondent(details, respondentTse);
+        notificationService.sendRespondentAppAcknowledgementEmailToClaimant(details, documentJson, respondentTse);
+        notificationService.sendAcknowledgementEmailToTribunal(details, respondentTse.getContactApplicationType());
+    }
+
+    private CoreEmailDetails prepareAcknowledgementEmailDetails(CaseData caseData, String caseId) {
+        ClaimantIndType claimantIndType = caseData.getClaimantIndType();
+        String hearingDate = NotificationsHelper.getNearestHearingToReferral(caseData, "Not set");
+
+        return new CoreEmailDetails(
+            caseData,
+            claimantIndType.getClaimantFirstNames() + " " + claimantIndType.getClaimantLastName(),
+            caseData.getEthosCaseReference(),
+            getRespondentNames(caseData),
+            hearingDate,
+            caseId
+        );
     }
 
     private void sendResponseToApplicationEmails(
@@ -360,5 +359,117 @@ public class ApplicationService {
             true,
             WEEKS_78
         );
+    }
+
+    /**
+     * Submit Respondent Application to Tell Something Else.
+     *
+     * @param authorization - authorization
+     * @param request - application request from the respondent
+     * @return the associated {@link CaseDetails} for the ID provided in request
+     */
+    public CaseDetails submitRespondentApplication(String authorization, RespondentApplicationRequest request)
+        throws NotificationClientException {
+
+        String caseTypeId = request.getCaseTypeId();
+
+        StartEventResponse startEventResponse = caseService.startUpdate(
+            authorization,
+            request.getCaseId(),
+            request.getCaseTypeId(),
+            CaseEvent.SUBMIT_RESPONDENT_TSE
+        );
+
+        CaseDetails caseDetails = startEventResponse.getCaseDetails();
+        RespondentTse respondentTse = request.getRespondentTse();
+        caseDetails.getData().put("respondentTse", respondentTse);
+
+        try {
+            log.info("Uploading pdf of Respondent TSE application");
+            caseService.uploadRespondentTseAsPdf(authorization, caseDetails, respondentTse, caseTypeId);
+        } catch (CaseDocumentException | DocumentGenerationException e) {
+            log.error("Couldn't upload pdf of Respondent TSE application " + e.getMessage());
+        }
+
+        UploadedDocumentType contactApplicationFile = respondentTse.getContactApplicationFile();
+        if (contactApplicationFile != null) {
+            log.info("Uploading Respondent TSE supporting file to document collection");
+            caseService.uploadTseSupportingDocument(caseDetails, contactApplicationFile,
+                                                    respondentTse.getContactApplicationType(),
+                                                    RESPONDENT);
+        }
+
+        CaseData caseData = EmployeeObjectMapper
+            .convertCaseDataMapToCaseDataObject(caseDetails.getData());
+        CaseDataContent content = caseDetailsConverter.caseDataContent(startEventResponse, caseData);
+
+
+        CaseDetails finalCaseDetails = caseService.submitUpdate(
+            authorization,
+            request.getCaseId(),
+            content,
+            caseTypeId
+        );
+
+        sendRespondentAppAcknowledgementEmails(authorization, request, finalCaseDetails);
+        return finalCaseDetails;
+    }
+
+    /**
+     * Respond to claimant application.
+     *
+     * @param authorization - authorization
+     * @param request - the request object which contains the appId and respondent application passed from sya-frontend
+     * @return the new updated case wrapped in a {@link CaseDetails}
+     */
+    public CaseDetails respondToClaimantApplication(String authorization, RespondToApplicationRequest request) {
+        String caseId = request.getCaseId();
+        String caseTypeId = request.getCaseTypeId();
+
+        StartEventResponse startEventResponse = caseService.startUpdate(
+            authorization,
+            caseId,
+            caseTypeId,
+            CaseEvent.RESPONDENT_TSE_RESPOND
+        );
+
+        return submitResponseForApplication(authorization, request, caseId, caseTypeId, startEventResponse, RESPONDENT);
+    }
+
+    private CaseDetails submitResponseForApplication(String authorization,
+                                                     RespondToApplicationRequest request,
+                                                     String caseId,
+                                                     String caseTypeId,
+                                                     StartEventResponse startEventResponse,
+                                                     String respondent) {
+        CaseData caseData = EmployeeObjectMapper
+            .convertCaseDataMapToCaseDataObject(startEventResponse.getCaseDetails().getData());
+
+        GenericTseApplicationTypeItem appToModify = TseApplicationHelper.getSelectedApplication(
+            caseData.getGenericTseApplicationCollection(), request.getApplicationId()
+        );
+
+        if (appToModify == null) {
+            throw new IllegalArgumentException("Application id provided is incorrect");
+        }
+
+        String copyToOtherParty = request.getResponse().getCopyToOtherParty();
+        GenericTseApplicationType appType = appToModify.getValue();
+
+        boolean isRespondingToTribunal = request.isRespondingToRequestOrOrder();
+        if (isRespondingToTribunal) {
+            appType.setApplicationState(IN_PROGRESS);
+            appType.setClaimantResponseRequired(NO);
+        }
+
+        sendResponseToApplicationEmails(appType, caseData, caseId, copyToOtherParty, isRespondingToTribunal);
+
+        boolean waEnabled = featureToggleService.isWorkAllocationEnabled();
+        setRespondentApplicationWithResponse(request, appType, caseData, caseDocumentService, waEnabled, respondent);
+
+        createAndAddPdfOfResponse(authorization, request, caseData, appType);
+
+        return caseService.submitUpdate(
+            authorization, caseId, caseDetailsConverter.caseDataContent(startEventResponse, caseData), caseTypeId);
     }
 }

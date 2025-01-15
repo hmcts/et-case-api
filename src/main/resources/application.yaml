@@ -91,6 +91,18 @@ notifications:
   respondentCopyTypeA: ${RESPONDENT_COPY_A:a2ffb9b3-8bf7-4e9a-aab8-08a6c5a82636}
   respondentCopyTypeB: ${RESPONDENT_COPY_B:59ccc472-8f2e-43e4-b275-832f1c714eff}
   tribunalAcknowledgement: ${TRIBUNAL_ACKNOWLEDGEMENT:d82aa18a-1a3d-44af-91fa-565d178f5e0e}
+  respondentTseTypeCRespAckTemplateId: ${RESPONDENT_TSE_TYPE_C_RESP_ACK_TEMPLATE_ID:default-value-c}
+  cyRespondentTseTypeCRespAckTemplateId: ${CY_RESPONDENT_TSE_TYPE_C_RESP_ACK_TEMPLATE_ID:default-value-cy-c}
+  respondentTseTypeBRespAckTemplateId: ${RESPONDENT_TSE_TYPE_B_RESP_ACK_TEMPLATE_ID:default-value-b}
+  cyRespondentTseTypeBRespAckTemplateId: ${CY_RESPONDENT_TSE_TYPE_B_RESP_ACK_TEMPLATE_ID:default-value-cy-b}
+  respondentTseTypeARespAckTemplateId: ${RESPONDENT_TSE_TYPE_A_RESP_ACK_TEMPLATE_ID:default-value-a}
+  cyRespondentTseTypeARespAckTemplateId: ${CY_RESPONDENT_TSE_TYPE_A_RESP_ACK_TEMPLATE_ID:default-value-cy-a}
+  respondentTseNoRespAckTemplateId: ${RESPONDENT_TSE_NO_RESP_ACK_TEMPLATE_ID:default-value-no}
+  cyRespondentTseNoRespAckTemplateId: ${CY_RESPONDENT_TSE_NO_RESP_ACK_TEMPLATE_ID:default-value-cy-no}
+  respondentTseTypeAClaimantAckTemplateId: ${RESPONDENT_TSE_TYPE_A_CLAIMANT_ACK_TEMPLATE_ID:default-value-claimant-a}
+  cyRespondentTseTypeAClaimantAckTemplateId: ${CY_RESPONDENT_TSE_TYPE_A_CLAIMANT_ACK_TEMPLATE_ID:default-value-cy-claimant-a}
+  respondentTseTypeBClaimantAckTemplateId: ${RESPONDENT_TSE_TYPE_B_CLAIMANT_ACK_TEMPLATE_ID:default-value-claimant-b}
+  cyRespondentTseTypeBClaimantAckTemplateId: ${CY_RESPONDENT_TSE_TYPE_B_CLAIMANT_ACK_TEMPLATE_ID:default-value-cy-claimant-b}
 
   et3SubmissionConfirmation: ${ET3_SUBMISSION_CONFIRMATION:16efc13b-3365-4bb8-aa27-5c0544645be8}
 
