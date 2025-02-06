@@ -28,6 +28,7 @@ import uk.gov.hmcts.reform.et.syaapi.service.ApplicationService;
 import uk.gov.hmcts.reform.et.syaapi.service.CaseService;
 import uk.gov.hmcts.reform.et.syaapi.service.HubLinkService;
 import uk.gov.hmcts.reform.et.syaapi.service.ManageCaseRoleService;
+import uk.gov.hmcts.reform.et.syaapi.service.RespondToApplicationService;
 import uk.gov.hmcts.reform.et.syaapi.service.VerifyTokenService;
 import uk.gov.hmcts.reform.et.syaapi.service.utils.ResourceLoader;
 import uk.gov.hmcts.reform.idam.client.IdamClient;
@@ -89,6 +90,8 @@ class ManageCaseControllerTest {
 
     @MockBean
     private ApplicationService applicationService;
+    @MockBean
+    private RespondToApplicationService respondToApplicationService;
     @MockBean
     private HubLinkService hubLinkService;
 
@@ -394,7 +397,7 @@ class ManageCaseControllerTest {
                 .content(ResourceLoader.toJson(caseRequest))
         ).andExpect(status().isOk());
 
-        verify(applicationService, times(1)).respondToApplication(
+        verify(respondToApplicationService, times(1)).respondToApplication(
             TEST_SERVICE_AUTH_TOKEN,
             caseRequest
         );

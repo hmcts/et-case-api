@@ -24,6 +24,7 @@ import uk.gov.hmcts.reform.et.syaapi.models.RespondToApplicationRequest;
 import uk.gov.hmcts.reform.et.syaapi.models.TribunalResponseViewedRequest;
 import uk.gov.hmcts.reform.et.syaapi.service.ApplicationService;
 import uk.gov.hmcts.reform.et.syaapi.service.BundlesService;
+import uk.gov.hmcts.reform.et.syaapi.service.RespondToApplicationService;
 import uk.gov.hmcts.reform.et.syaapi.service.VerifyTokenService;
 import uk.gov.hmcts.reform.idam.client.IdamClient;
 import uk.gov.hmcts.reform.idam.client.models.UserInfo;
@@ -72,6 +73,8 @@ class ManageCaseControllerIntegrationTest {
     @MockBean
     private ApplicationService applicationService;
     @MockBean
+    private RespondToApplicationService respondToApplicationService;
+    @MockBean
     private BundlesService bundlesService;
     @Autowired
     private ResourceLoader resourceLoader;
@@ -94,7 +97,7 @@ class ManageCaseControllerIntegrationTest {
         when(authTokenGenerator.generate()).thenReturn("token");
         when(idamClient.getUserInfo(any())).thenReturn(UserInfo.builder().uid("1234").build());
         when(applicationService.submitApplication(any(), any())).thenReturn(caseDetailsResponse);
-        when(applicationService.respondToApplication(any(), any())).thenReturn(caseDetailsResponse);
+        when(respondToApplicationService.respondToApplication(any(), any())).thenReturn(caseDetailsResponse);
         when(applicationService.updateTribunalResponseAsViewed(any(),any())).thenReturn(caseDetailsResponse);
         when(bundlesService.submitBundles(any(),any())).thenReturn(caseDetailsResponse);
     }

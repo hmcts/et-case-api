@@ -25,6 +25,7 @@ import uk.gov.hmcts.reform.et.syaapi.service.ApplicationService;
 import uk.gov.hmcts.reform.et.syaapi.service.CaseService;
 import uk.gov.hmcts.reform.et.syaapi.service.HubLinkService;
 import uk.gov.hmcts.reform.et.syaapi.service.ManageCaseRoleService;
+import uk.gov.hmcts.reform.et.syaapi.service.RespondToApplicationService;
 import uk.gov.service.notify.NotificationClientException;
 
 import java.util.List;
@@ -48,6 +49,7 @@ public class ManageCaseController {
 
     private final ManageCaseRoleService manageCaseRoleService;
     private final ApplicationService applicationService;
+    private final RespondToApplicationService respondToApplicationService;
     private final HubLinkService hubLinkService;
     private final CaseService caseService;
 
@@ -222,7 +224,7 @@ public class ManageCaseController {
                  request.getCaseTypeId(), request.getCaseId()
         );
 
-        CaseDetails finalCaseDetails = applicationService.respondToApplication(authorization, request);
+        CaseDetails finalCaseDetails = respondToApplicationService.respondToApplication(authorization, request);
 
         return ok(finalCaseDetails);
     }
