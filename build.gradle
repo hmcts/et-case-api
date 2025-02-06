@@ -144,6 +144,16 @@ pmd {
 
 jacocoTestReport {
   executionData(test)
+
+  // Exclude the equals method of the CaseData class as Jcoco instrumentation find it too large a method
+  // given the JVM method size limit
+  afterEvaluate {
+    classDirectories.setFrom(files(classDirectories.files.collect {
+      fileTree(dir: it, exclude: [
+        'uk/gov/hmcts/et/common/model/ccd/CaseData.class' // Exclude the whole class
+      ])
+    }))
+  }
   reports {
     xml.required = true
     csv.required = false

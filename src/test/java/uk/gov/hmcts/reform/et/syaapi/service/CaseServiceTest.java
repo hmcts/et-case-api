@@ -28,6 +28,8 @@ import uk.gov.hmcts.reform.ccd.client.model.CaseDetails;
 import uk.gov.hmcts.reform.ccd.client.model.Event;
 import uk.gov.hmcts.reform.ccd.client.model.StartEventResponse;
 import uk.gov.hmcts.reform.et.syaapi.constants.JurisdictionCodesConstants;
+import uk.gov.hmcts.reform.et.syaapi.enums.CaseEvent;
+import uk.gov.hmcts.reform.et.syaapi.helper.CaseDetailsConverter;
 import uk.gov.hmcts.reform.et.syaapi.helper.JurisdictionCodesMapper;
 import uk.gov.hmcts.reform.et.syaapi.model.CaseTestData;
 import uk.gov.hmcts.reform.et.syaapi.models.CaseRequest;
@@ -41,7 +43,9 @@ import uk.gov.service.notify.SendEmailResponse;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -52,10 +56,12 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.util.AssertionErrors.assertNull;
 import static uk.gov.hmcts.ecm.common.model.helper.Constants.ENGLANDWALES_CASE_TYPE_ID;
 import static uk.gov.hmcts.ecm.common.model.helper.Constants.SUBMITTED;
 import static uk.gov.hmcts.ecm.common.model.helper.Constants.YES;
@@ -96,6 +102,8 @@ class CaseServiceTest {
     private AcasService acasService;
     @Mock
     private CaseDocumentService caseDocumentService;
+    @Mock
+    private CaseDetailsConverter caseDetailsConverter;
     @Mock
     private DocumentGenerationService documentGenerationService;
     @Mock
@@ -369,17 +377,18 @@ class CaseServiceTest {
         assertEquals(1, ((ArrayList<?>)caseDetails.getData().get("documentCollection")).size());
         List<?> docCollection = (List<?>) caseDetails.getData().get("documentCollection");
 
-        assertEquals("DocumentType(typeOfDocument="
-             + "Other, uploadedDocument=UploadedDocumentType(documentBinaryUrl=http://document.url/2333482f-1eb9-44f1"
-             + "-9b78-f5d8f0c74b15/binary, documentFilename=filename, documentUrl=http://document.binary"
-             + ".url/2333482f-1eb9-44f1-9b78-f5d8f0c74b15, categoryId=C11, uploadTimestamp=null), "
-             + "ownerDocument=null, creationDate=null, "
-             + "shortDescription=null, topLevelDocuments=null, startingClaimDocuments=null, "
-             + "responseClaimDocuments=null, initialConsiderationDocuments=null, "
-             + "caseManagementDocuments=null, withdrawalSettledDocuments=null, hearingsDocuments=null, "
-             + "judgmentAndReasonsDocuments=null, reconsiderationDocuments=null, miscDocuments=null, "
-             + "documentType=null, dateOfCorrespondence=null, docNumber=null, tornadoEmbeddedPdfUrl=null, "
-             + "excludeFromDcf=null, documentIndex=null)",
+        assertEquals(
+            "DocumentType(typeOfDocument="
+                + "Other, uploadedDocument=UploadedDocumentType(documentBinaryUrl=http://document.url/2333482f-1eb9-44f1"
+                + "-9b78-f5d8f0c74b15/binary, documentFilename=filename, documentUrl=http://document.binary"
+                + ".url/2333482f-1eb9-44f1-9b78-f5d8f0c74b15, categoryId=C11, uploadTimestamp=null), "
+                + "ownerDocument=null, creationDate=null, "
+                + "shortDescription=null, topLevelDocuments=null, startingClaimDocuments=null, "
+                + "responseClaimDocuments=null, initialConsiderationDocuments=null, "
+                + "caseManagementDocuments=null, withdrawalSettledDocuments=null, hearingsDocuments=null, "
+                + "judgmentAndReasonsDocuments=null, reconsiderationDocuments=null, miscDocuments=null, "
+                + "documentType=null, dateOfCorrespondence=null, docNumber=null, tornadoEmbeddedPdfUrl=null, "
+                + "excludeFromDcf=null, documentIndex=null)",
             ((DocumentTypeItem) docCollection.get(0)).getValue().toString());
     }
 
@@ -392,6 +401,7 @@ class CaseServiceTest {
         when(notificationService.sendDocUploadErrorEmail(any(), any(), any(), any()))
             .thenReturn(sendEmailResponse);
 
+        caseTestData.getCaseRequest().setCaseId("1668421480426211");
         caseService.submitCase(
             TEST_SERVICE_AUTH_TOKEN,
             caseTestData.getCaseRequest()
@@ -442,6 +452,87 @@ class CaseServiceTest {
             String expected = "Withdraw all/part of claim";
             assertThat(actual).isEqualTo(expected);
         }
+    }
+
+    @Test
+    void triggerEventNullInputs() {
+        CaseEvent caseEventInstance = CaseEvent.SUBMIT_CASE_DRAFT;
+        assertNull("Null authToken should return null instead of CaseDetail", caseService.triggerEvent(
+            null, "caseId", caseEventInstance,"caseType", Map.of()));
+        assertNull("Null caseId should return null instead of CaseDetail", caseService.triggerEvent(
+            "authorization", null, caseEventInstance, "caseType", Map.of()));
+        assertNull("Null eventName should return null instead of CaseDetail", caseService.triggerEvent(
+            "authorization", "caseId", null, "caseType", Map.of()));
+        assertNull("Null caseType should return null instead of CaseDetail", caseService.triggerEvent(
+            "authorization", "caseId", caseEventInstance, null, Map.of()));
+        assertNull("Null caseData should return null instead of CaseDetail", caseService.triggerEvent(
+            "authorization", "caseId", caseEventInstance, "caseType", null));
+    }
+
+    @Test
+    void triggerEventCaseDetailsNotFound() {
+        UserInfo userInfo = mock(UserInfo.class);
+        when(idamClient.getUserInfo(TEST_SERVICE_AUTH_TOKEN)).thenReturn(userInfo);
+        when(authTokenGenerator.generate()).thenReturn(TEST_SERVICE_AUTH_TOKEN);
+        when(userInfo.getUid()).thenReturn(USER_ID);
+
+        StartEventResponse startEventResponseMock = mock(StartEventResponse.class);
+        when(startEventResponseMock.getCaseDetails()).thenReturn(null);
+        CaseEvent caseEventInstance = CaseEvent.SUBMIT_CASE_DRAFT;
+        when(caseService.startUpdate(TEST_SERVICE_AUTH_TOKEN, CASE_ID, ENGLAND_CASE_TYPE,
+                                     caseEventInstance)).thenReturn(startEventResponseMock);
+
+        CaseDetails requestCaseDetails = mock(CaseDetails.class);
+        Map<String, Object> requestCaseData = new ConcurrentHashMap<>();
+        requestCaseData.put("ethosCaseReference", "123456789");
+        requestCaseDetails.setData(requestCaseData);
+        CaseData caseData = new CaseData();
+        caseData.setEthosCaseReference("123456789");
+        caseData.setEcmCaseType("Single");
+        caseData.setManagingOffice("Leeds");
+        caseData.setCurrentPosition("ongoing");
+        when(caseDetailsConverter.toCaseData(requestCaseDetails)).thenReturn(caseData);
+        when(caseDetailsConverter.getCaseData(requestCaseData)).thenReturn(caseData);
+
+        CaseDetails result = caseService.triggerEvent(TEST_SERVICE_AUTH_TOKEN, CASE_ID, caseEventInstance,
+                                                      ENGLAND_CASE_TYPE, requestCaseDetails.getData());
+        assertNull("When the startEventResponse returns null, triggerEvent should return null too", result);
+    }
+
+    @Test
+    void submitCaseTriggerEventForCaseDetailsUpdateWithValidInputs() {
+        when(authTokenGenerator.generate()).thenReturn(TEST_SERVICE_AUTH_TOKEN);
+        Map<String, Object> requestCaseData = new ConcurrentHashMap<>();
+        requestCaseData.put("ethosCaseReference", "123456789");
+        requestCaseData.put("caseType", "Single");
+        requestCaseData.put("caseId", "caseId");
+        requestCaseData.put("managingOffice", "Leeds");
+        CaseDetails caseDetails = CaseDetails.builder().data(new HashMap<>()).build();
+        caseDetails.setData(requestCaseData);
+        StartEventResponse startEventResponseMock2 = StartEventResponse.builder().caseDetails(caseDetails).build();
+        startEventResponseMock2.setCaseDetails(caseDetails);
+        CaseEvent caseEventInstance = CaseEvent.SUBMIT_CASE_DRAFT;
+        when(caseService.startUpdate(TEST_SERVICE_AUTH_TOKEN, CASE_ID, ENGLAND_CASE_TYPE,
+                                     caseEventInstance)).thenReturn(startEventResponseMock2);
+
+        CaseData caseData = new CaseData();
+        caseData.setEthosCaseReference("123456789");
+        caseData.setEcmCaseType("Single");
+        caseData.setManagingOffice("Leeds");
+        caseData.setCurrentPosition("ongoing");
+
+        Map<String, Object> updatedCaseData = new ConcurrentHashMap<>();
+        updatedCaseData.put("ethosCaseReference", "123456789");
+        updatedCaseData.put("managingOffice", "Leeds");
+        updatedCaseData.put("currentPosition", "ongoing");
+        updatedCaseData.put("caseId", "caseId");
+        CaseDetails updatedCaseDetails = mock(CaseDetails.class);
+        updatedCaseDetails.setData(updatedCaseData);
+        caseService.triggerEvent(TEST_SERVICE_AUTH_TOKEN, CASE_ID, caseEventInstance,
+                                 ENGLAND_CASE_TYPE, requestCaseData);
+        verify(ccdApiClient).submitEventForCitizen(
+            anyString(), anyString(), anyString(), anyString(), anyString(), anyString(),
+            anyBoolean(), any());
     }
 
     @Test

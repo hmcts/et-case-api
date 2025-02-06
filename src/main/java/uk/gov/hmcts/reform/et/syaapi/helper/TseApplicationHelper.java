@@ -63,6 +63,7 @@ public final class TseApplicationHelper {
     public static GenericTseApplicationTypeItem getSelectedApplication(
         List<GenericTseApplicationTypeItem> applications,
         String applicationId) {
+
         return applications.stream()
             .filter(a -> a.getId().equals(applicationId))
             .findAny()

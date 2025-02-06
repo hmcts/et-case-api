@@ -12,6 +12,7 @@ import uk.gov.hmcts.et.common.model.ccd.items.DocumentTypeItem;
 import uk.gov.hmcts.et.common.model.ccd.items.GenericTseApplicationType;
 import uk.gov.hmcts.et.common.model.ccd.items.GenericTseApplicationTypeItem;
 import uk.gov.hmcts.et.common.model.ccd.items.TseAdminRecordDecisionTypeItem;
+import uk.gov.hmcts.et.common.model.ccd.items.TseRespondTypeItem;
 import uk.gov.hmcts.et.common.model.ccd.types.DocumentType;
 import uk.gov.hmcts.reform.et.syaapi.model.TestData;
 import uk.gov.hmcts.reform.et.syaapi.models.RespondToApplicationRequest;
@@ -182,4 +183,14 @@ class TseApplicationHelperTest {
             assertThat(actualLocalDateTime).isEqualTo(expectedLocalDateTime);
         }
     }
+
+    @Test
+    void shouldReturnNullWhenRespondCollectionIsEmpty() {
+        GenericTseApplicationTypeItem app = GenericTseApplicationTypeItem.builder()
+            .value(GenericTseApplicationType.builder().respondCollection(List.of()).build())
+            .build();
+        TseRespondTypeItem actual = TseApplicationHelper.findResponse(app, "testId");
+        assertThat(actual).isNull();
+    }
+
 }

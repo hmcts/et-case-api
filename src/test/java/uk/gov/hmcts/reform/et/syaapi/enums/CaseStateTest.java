@@ -12,7 +12,7 @@ import static uk.gov.hmcts.reform.et.syaapi.service.utils.TestConstants.SUBMITTE
 class CaseStateTest {
 
     @Test
-    void shouldGetDraftStatetName() {
+    void shouldGetDraftStateName() {
         assertThat(String.valueOf(CaseState.DRAFT)).isEqualToIgnoringCase(DRAFT);
     }
 
@@ -23,7 +23,7 @@ class CaseStateTest {
     }
 
     @Test
-    void shouldGetSubmitCaseStatetName() {
+    void shouldGetSubmitCaseStateName() {
         assertThat(String.valueOf(CaseState.SUBMITTED)).isEqualToIgnoringCase(SUBMITTED);
     }
 
