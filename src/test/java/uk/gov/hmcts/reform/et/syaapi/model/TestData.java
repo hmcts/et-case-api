@@ -11,6 +11,7 @@ import uk.gov.hmcts.reform.et.syaapi.models.ChangeApplicationStatusRequest;
 import uk.gov.hmcts.reform.et.syaapi.models.ClaimantApplicationRequest;
 import uk.gov.hmcts.reform.et.syaapi.models.ClaimantBundlesRequest;
 import uk.gov.hmcts.reform.et.syaapi.models.RespondToApplicationRequest;
+import uk.gov.hmcts.reform.et.syaapi.models.RespondentApplicationRequest;
 import uk.gov.hmcts.reform.et.syaapi.models.SendNotificationAddResponseRequest;
 import uk.gov.hmcts.reform.et.syaapi.models.SendNotificationStateUpdateRequest;
 import uk.gov.hmcts.reform.et.syaapi.models.TribunalResponseViewedRequest;
@@ -75,6 +76,11 @@ public final class TestData {
     private final ClaimantApplicationRequest claimantApplicationRequest = ResourceLoader.fromString(
         "requests/claimantTseRequest.json",
         ClaimantApplicationRequest.class
+    );
+
+    private final RespondentApplicationRequest respondentApplicationRequest = ResourceLoader.fromString(
+        "requests/respondentTseRequest.json",
+        RespondentApplicationRequest.class
     );
 
     private final SendNotificationAddResponseRequest sendNotificationAddResponseRequest = ResourceLoader.fromString(

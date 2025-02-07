@@ -40,7 +40,7 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.ccd.sdk.type.YesOrNo.YES;
 import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.ENGLISH_LANGUAGE;
-import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.CLAIMANT;
+import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.CLAIMANT_TITLE;
 
 @SuppressWarnings({"PMD.LawOfDemeter", "PMD.LinguisticNaming", "PMD.TooManyMethods"})
 @Slf4j
@@ -229,7 +229,7 @@ class ManageCaseControllerFunctionalTest extends FunctionalTestBase {
             .statusCode(HttpStatus.SC_OK)
             .log().all(true)
             .assertThat().body("id", equalTo(caseId))
-            .assertThat().body("case_data.genericTseApplicationCollection[0].value.applicant", equalTo(CLAIMANT))
+            .assertThat().body("case_data.genericTseApplicationCollection[0].value.applicant", equalTo(CLAIMANT_TITLE))
             .assertThat().body("case_data.genericTseApplicationCollection[0].value.type",
                                equalTo("Withdraw all/part of claim"))
             .extract().body().jsonPath();
@@ -258,7 +258,7 @@ class ManageCaseControllerFunctionalTest extends FunctionalTestBase {
             .log().all(true)
             .assertThat().body("id", equalTo(caseId))
             .assertThat().body("case_data.genericTseApplicationCollection[0].value.respondCollection[0].value.from",
-                               equalTo(CLAIMANT));
+                               equalTo(CLAIMANT_TITLE));
     }
 
     @Test

@@ -17,6 +17,7 @@ import uk.gov.hmcts.et.common.model.ccd.items.DocumentTypeItem;
 import uk.gov.hmcts.et.common.model.ccd.items.GenericTseApplicationType;
 import uk.gov.hmcts.et.common.model.ccd.items.JurCodesTypeItem;
 import uk.gov.hmcts.et.common.model.ccd.types.DocumentType;
+import uk.gov.hmcts.et.common.model.ccd.types.RespondentTse;
 import uk.gov.hmcts.et.common.model.ccd.types.UploadedDocumentType;
 import uk.gov.hmcts.et.common.model.ccd.types.citizenhub.ClaimantTse;
 import uk.gov.hmcts.reform.authorisation.generators.AuthTokenGenerator;
@@ -51,10 +52,11 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static uk.gov.hmcts.ecm.common.model.helper.Constants.SUBMITTED_STATE;
+import static uk.gov.hmcts.ecm.common.model.helper.DocumentConstants.CLAIMANT_CORRESPONDENCE;
+import static uk.gov.hmcts.ecm.common.model.helper.DocumentConstants.RESPONDENT_CORRESPONDENCE;
 import static uk.gov.hmcts.ecm.common.model.helper.TribunalOffice.getCaseTypeId;
 import static uk.gov.hmcts.et.common.model.ccd.types.citizenhub.ClaimantTse.APP_TYPE_MAP;
 import static uk.gov.hmcts.reform.et.syaapi.constants.DocumentCategoryConstants.CASE_MANAGEMENT_DOC_CATEGORY;
-import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.CLAIMANT_CORRESPONDENCE_DOCUMENT;
 import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.DEFAULT_TRIBUNAL_OFFICE;
 import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.ENGLAND_CASE_TYPE;
 import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.JURISDICTION_ID;
@@ -64,6 +66,8 @@ import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.YES;
 import static uk.gov.hmcts.reform.et.syaapi.enums.CaseEvent.INITIATE_CASE_DRAFT;
 import static uk.gov.hmcts.reform.et.syaapi.enums.CaseEvent.SUBMIT_CASE_DRAFT;
 import static uk.gov.hmcts.reform.et.syaapi.enums.CaseEvent.UPDATE_CASE_SUBMITTED;
+import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.CLAIMANT_TITLE;
+
 /**
  * Provides read and write access to cases stored by ET.
  */
@@ -172,7 +176,7 @@ public class CaseService {
     }
 
     /**
-     * Will accept a {@link CaseRequest} trigger an event to update a give case in ET.
+     * Will accept a {@link CaseRequest} trigger an event to update a given case in ET.
      *
      * @param authorization jwt of the user
      * @param caseRequest   case to be updated
@@ -395,7 +399,7 @@ public class CaseService {
     }
 
     void uploadTseSupportingDocument(CaseDetails caseDetails, UploadedDocumentType contactApplicationFile,
-                                     String contactApplicationType) {
+                                     String contactApplicationType, String userType) {
         CaseData caseData = EmployeeObjectMapper.convertCaseDataMapToCaseDataObject(caseDetails.getData());
         List<DocumentTypeItem> docList = caseData.getDocumentCollection();
 
@@ -407,15 +411,29 @@ public class CaseService {
             ApplicationService.getNextApplicationNumber(caseData),
             APP_TYPE_MAP.get(contactApplicationType),
             extension);
-        String applicationDocMapping =
-            DocumentHelper.claimantApplicationTypeToDocType(contactApplicationType);
+
+        String applicationDocMapping;
+        String typeOfDocument;
+        String shortDescription;
+        if (userType.equals(CLAIMANT_TITLE)) {
+            applicationDocMapping = DocumentHelper.claimantApplicationTypeToDocType(contactApplicationType);
+            typeOfDocument = CLAIMANT_CORRESPONDENCE;
+            shortDescription = APP_TYPE_MAP.get(contactApplicationType);
+        } else {
+            applicationDocMapping = DocumentHelper.respondentApplicationToDocType(contactApplicationType);
+            typeOfDocument = RESPONDENT_CORRESPONDENCE;
+            shortDescription = contactApplicationType;
+        }
+
         String topLevel = DocumentHelper.getTopLevelDocument(applicationDocMapping);
         contactApplicationFile.setDocumentFilename(docName);
+
+
         DocumentType documentType = DocumentType.builder()
             .topLevelDocuments(topLevel)
-            .typeOfDocument(CLAIMANT_CORRESPONDENCE_DOCUMENT)
+            .typeOfDocument(typeOfDocument)
             .uploadedDocument(contactApplicationFile)
-            .shortDescription(APP_TYPE_MAP.get(contactApplicationType))
+            .shortDescription(shortDescription)
             .dateOfCorrespondence(LocalDate.now().toString())
             .build();
         DocumentHelper.setSecondLevelDocumentFromType(documentType, applicationDocMapping);
@@ -469,7 +487,8 @@ public class CaseService {
     void createResponsePdf(String authorization,
                            CaseData caseData,
                            RespondToApplicationRequest request,
-                           String appType)
+                           String appType,
+                           String respondingUserType)
         throws DocumentGenerationException, CaseDocumentException {
         String description = "Response to " + appType;
         GenericTseApplicationType application = TseApplicationHelper.getSelectedApplication(
@@ -478,10 +497,11 @@ public class CaseService {
             .getValue();
 
         PdfDecodedMultipartFile multipartResponsePdf =
-            pdfUploadService.convertClaimantResponseIntoMultipartFile(request,
-                                                                      description,
-                                                                      caseData.getEthosCaseReference(),
-                                                                      application);
+            pdfUploadService.convertApplicationResponseIntoMultipartFile(request,
+                                                                         description,
+                                                                         caseData.getEthosCaseReference(),
+                                                                         application,
+                                                                         respondingUserType);
 
         String applicationDoc = TseApplicationHelper.getApplicationDoc(application);
         String topLevel = DocumentHelper.getTopLevelDocument(applicationDoc);
@@ -512,5 +532,41 @@ public class CaseService {
         return triggerEvent(authorization, caseRequest.getCaseId(), UPDATE_CASE_SUBMITTED,
                             caseRequest.getCaseTypeId(), caseRequest.getCaseData()
         );
+    }
+
+    void uploadRespondentTseAsPdf(
+        String authorization,
+        CaseDetails caseDetails,
+        RespondentTse respondentTse,
+        String caseType
+    ) throws DocumentGenerationException, CaseDocumentException {
+
+        CaseData caseData = EmployeeObjectMapper.convertCaseDataMapToCaseDataObject(caseDetails.getData());
+        List<DocumentTypeItem> docList = caseData.getDocumentCollection();
+
+        if (docList == null) {
+            docList = new ArrayList<>();
+        }
+
+        String docName = "Application %d - %s.pdf".formatted(
+            ApplicationService.getNextApplicationNumber(caseData),
+            respondentTse.getContactApplicationType()).replace("/", " or ");
+        PdfDecodedMultipartFile pdfDecodedMultipartFile =
+            pdfUploadService.convertRespondentTseIntoMultipartFile(respondentTse,
+                                                                 caseData.getEthosCaseReference(),
+                                                                 docName);
+        String applicationDocMapping = respondentTse.getContactApplicationType();
+        String topLevel = DocumentHelper.getTopLevelDocument(applicationDocMapping);
+
+        docList.add(caseDocumentService.createDocumentTypeItemLevels(
+            authorization,
+            caseType,
+            topLevel,
+            applicationDocMapping,
+            CASE_MANAGEMENT_DOC_CATEGORY,
+            pdfDecodedMultipartFile
+        ));
+
+        caseDetails.getData().put(DOCUMENT_COLLECTION, docList);
     }
 }

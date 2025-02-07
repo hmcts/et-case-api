@@ -25,7 +25,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static uk.gov.hmcts.ecm.common.model.helper.Constants.CLAIMANT_TITLE;
 import static uk.gov.hmcts.ecm.common.model.helper.DocumentConstants.APP_FOR_A_JUDGMENT_TO_BE_RECONSIDERED_C;
 import static uk.gov.hmcts.ecm.common.model.helper.DocumentConstants.APP_FOR_A_WITNESS_ORDER_C;
 import static uk.gov.hmcts.ecm.common.model.helper.DocumentConstants.APP_TO_AMEND_CLAIM;
@@ -39,7 +38,8 @@ import static uk.gov.hmcts.ecm.common.model.helper.DocumentConstants.CHANGE_OF_P
 import static uk.gov.hmcts.ecm.common.model.helper.DocumentConstants.CONTACT_THE_TRIBUNAL_C;
 import static uk.gov.hmcts.ecm.common.model.helper.DocumentConstants.R_HAS_NOT_COMPLIED_WITH_AN_ORDER_C;
 import static uk.gov.hmcts.ecm.common.model.helper.DocumentConstants.WITHDRAWAL_OF_ALL_OR_PART_CLAIM;
-import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.setRespondentApplicationWithResponse;
+import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.CLAIMANT_TITLE;
+import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.setApplicationWithResponse;
 
 class TseApplicationHelperTest {
     @MockBean
@@ -116,7 +116,9 @@ class TseApplicationHelperTest {
             DocumentTypeItem docType = DocumentTypeItem.builder().id("1").value(new DocumentType()).build();
             when(caseDocumentService.createDocumentTypeItem(any(), any())).thenReturn(docType);
 
-            setRespondentApplicationWithResponse(request, app, caseData, caseDocumentService, true);
+            setApplicationWithResponse(request, app, caseData, caseDocumentService,
+                                       true, CLAIMANT_TITLE
+            );
 
             Assertions.assertEquals("waitingForTheTribunal", app.getApplicationState());
             Assertions.assertEquals("Response to Amend response",

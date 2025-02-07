@@ -1,0 +1,13 @@
+{
+  "contactApplicationType": "Amend response",
+  "contactApplicationText": "Amend response",
+  "contactApplicationFile": {
+    "document_url": "",
+    "document_filename": "",
+    "document_binary_url": "",
+    "document_size": "",
+    "document_mime_type": ""
+  },
+  "copyToOtherPartyYesOrNo": "Yes",
+  "copyToOtherPartyText": ""
+}

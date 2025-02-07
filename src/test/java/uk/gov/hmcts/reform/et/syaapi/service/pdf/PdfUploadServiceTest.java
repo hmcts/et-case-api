@@ -13,6 +13,7 @@ import org.mockito.quality.Strictness;
 import uk.gov.hmcts.ecm.common.service.pdf.PdfDecodedMultipartFile;
 import uk.gov.hmcts.ecm.common.service.pdf.PdfService;
 import uk.gov.hmcts.et.common.model.ccd.items.GenericTseApplicationType;
+import uk.gov.hmcts.et.common.model.ccd.types.RespondentTse;
 import uk.gov.hmcts.et.common.model.ccd.types.citizenhub.ClaimantTse;
 import uk.gov.hmcts.reform.et.syaapi.model.CaseTestData;
 import uk.gov.hmcts.reform.et.syaapi.models.AcasCertificate;
@@ -31,6 +32,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.WELSH_LANGUAGE;
+import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.CLAIMANT_TITLE;
 import static uk.gov.hmcts.reform.et.syaapi.service.utils.TestConstants.SAMPLE_BYTE_ARRAY;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,6 +52,7 @@ class PdfUploadServiceTest {
 
     private static final String CLIENT_TYPE_CLAIMANT = "claimant";
     private static final String SUBMIT_ET1_CITIZEN = "submitET1Citizen";
+    private static final String CUSTOM_DOC_NAME = "customDocName.pdf";
 
     @BeforeEach
     @SneakyThrows
@@ -123,7 +126,7 @@ class PdfUploadServiceTest {
             pdfUploadService.convertClaimantTseIntoMultipartFile(
                 caseTestData.getClaimantTse(),
                 caseTestData.getCaseData().getEthosCaseReference(),
-                "customDocName.pdf");
+                CUSTOM_DOC_NAME);
 
         assertThat(pdfDecodedMultipartFile).isNotNull();
     }
@@ -135,7 +138,7 @@ class PdfUploadServiceTest {
             pdfUploadService.convertClaimantTseIntoMultipartFile(
                 caseTestData.getClaimantTse(),
                 caseTestData.getCaseData().getEthosCaseReference(),
-                "customDocName.pdf");
+                CUSTOM_DOC_NAME);
 
         assertThat(pdfDecodedMultipartFile).isNotNull();
     }
@@ -146,8 +149,9 @@ class PdfUploadServiceTest {
         GenericTseApplicationType application =
             caseTestData.getCaseData().getGenericTseApplicationCollection().get(0).getValue();
         PdfDecodedMultipartFile pdfDecodedMultipartFile =
-            pdfUploadService.convertClaimantResponseIntoMultipartFile(request, "Response to app",
-                                                                "6000001/2023", application);
+            pdfUploadService.convertApplicationResponseIntoMultipartFile(request, "Response to app",
+                                                                "6000001/2023", application,
+                                                                         CLAIMANT_TITLE);
         assertThat(pdfDecodedMultipartFile).isNotNull();
     }
 
@@ -158,8 +162,9 @@ class PdfUploadServiceTest {
             caseTestData.getCaseData().getGenericTseApplicationCollection().get(0).getValue();
         request.getResponse().setHasSupportingMaterial("No");
         PdfDecodedMultipartFile pdfDecodedMultipartFile =
-            pdfUploadService.convertClaimantResponseIntoMultipartFile(request, "Response to app",
-                                                                "6000001/2023", application);
+            pdfUploadService.convertApplicationResponseIntoMultipartFile(request, "Response to app",
+                                                                "6000001/2023", application,
+                                                                         CLAIMANT_TITLE);
         assertThat(pdfDecodedMultipartFile).isNotNull();
     }
 
@@ -173,5 +178,30 @@ class PdfUploadServiceTest {
             pdfUploadService.convertAcasCertificatesToPdfDecodedMultipartFiles(
                 caseTestData.getCaseData(), acasCertificates);
         assertThat(pdfDecodedMultipartFiles).isEmpty();
+    }
+
+    @Test
+    void shouldCreatePdfDecodedMultipartFileFromRespTseApplication() throws DocumentGenerationException {
+        caseTestData.getCaseData().setRespondentTse(new RespondentTse());
+        PdfDecodedMultipartFile pdfDecodedMultipartFile =
+            pdfUploadService.convertRespondentTseIntoMultipartFile(
+                caseTestData.getRespondentTse(),
+                caseTestData.getCaseData().getEthosCaseReference(),
+                CUSTOM_DOC_NAME);
+
+        assertThat(pdfDecodedMultipartFile).isNotNull();
+    }
+
+    @Test
+    void shouldCreatePdfDecodedMultipartFileFromRespTseApplicationNoSupportingFile()
+        throws DocumentGenerationException {
+        caseTestData.getRespondentTse().setContactApplicationFile(null);
+        PdfDecodedMultipartFile pdfDecodedMultipartFile =
+            pdfUploadService.convertRespondentTseIntoMultipartFile(
+                caseTestData.getRespondentTse(),
+                caseTestData.getCaseData().getEthosCaseReference(),
+                CUSTOM_DOC_NAME);
+
+        assertThat(pdfDecodedMultipartFile).isNotNull();
     }
 }

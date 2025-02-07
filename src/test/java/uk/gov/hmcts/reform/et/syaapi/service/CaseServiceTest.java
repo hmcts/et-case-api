@@ -68,6 +68,8 @@ import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.SCOTLAND_CA
 import static uk.gov.hmcts.reform.et.syaapi.enums.CaseEvent.UPDATE_CASE_DRAFT;
 import static uk.gov.hmcts.reform.et.syaapi.enums.CaseEvent.UPDATE_CASE_SUBMITTED;
 import static uk.gov.hmcts.reform.et.syaapi.helper.EmployeeObjectMapper.convertCaseDataMapToCaseDataObject;
+import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.CLAIMANT_TITLE;
+import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.RESPONDENT_TITLE;
 import static uk.gov.hmcts.reform.et.syaapi.service.utils.TestConstants.CASE_ID;
 import static uk.gov.hmcts.reform.et.syaapi.service.utils.TestConstants.SUBMIT_CASE_DRAFT;
 import static uk.gov.hmcts.reform.et.syaapi.service.utils.TestConstants.TEST_NAME;
@@ -435,12 +437,26 @@ class CaseServiceTest {
         void setsShortDescriptionCorrectly() {
             CaseDetails caseDetails = CaseDetails.builder().data(new HashMap<>()).build();
             String contactApplicationType = "withdraw";
-            caseService.uploadTseSupportingDocument(caseDetails, new UploadedDocumentType(), contactApplicationType);
+            caseService.uploadTseSupportingDocument(caseDetails, new UploadedDocumentType(),
+                                                    contactApplicationType, CLAIMANT_TITLE);
 
             CaseData caseData = convertCaseDataMapToCaseDataObject(caseDetails.getData());
             String actual = caseData.getDocumentCollection().get(0).getValue().getShortDescription();
             String expected = "Withdraw all/part of claim";
             assertThat(actual).isEqualTo(expected);
+        }
+
+        @Test
+        void setsShortDescriptionCorrectlyRespondentTse() {
+            CaseDetails caseDetails = CaseDetails.builder().data(new HashMap<>()).build();
+            String contactApplicationType = "Amend response";
+            caseService.uploadTseSupportingDocument(caseDetails, new UploadedDocumentType(),
+                                                    contactApplicationType, RESPONDENT_TITLE
+            );
+
+            CaseData caseData = convertCaseDataMapToCaseDataObject(caseDetails.getData());
+            String actual = caseData.getDocumentCollection().get(0).getValue().getShortDescription();
+            assertThat(actual).isEqualTo(contactApplicationType);
         }
     }
 
@@ -618,5 +634,31 @@ class CaseServiceTest {
                                       SCOTLAND_CASE_TYPE,
                                       caseRequest.getCaseData())).thenReturn(caseDetails);
         assertThat(caseService.updateCaseSubmitted(TEST_SERVICE_AUTH_TOKEN, caseRequest)).isEqualTo(caseDetails);
+    }
+
+    @Test
+    void shouldInvokeRespondentTsePdf()
+        throws DocumentGenerationException {
+        when(pdfUploadService.convertRespondentTseIntoMultipartFile(any(), any(), anyString())).thenReturn(
+            tsePdfMultipartFileMock);
+
+        assertDoesNotThrow(() ->
+                               caseService.uploadRespondentTseAsPdf(
+                                   TEST_SERVICE_AUTH_TOKEN,
+                                   caseTestData.getCaseDetails(),
+                                   caseTestData.getRespondentTse(),
+                                   "TEST"
+                               )
+        );
+    }
+
+    @SneakyThrows
+    @Test
+    void givenPdfServiceErrorProducesDocumentGenerationExceptionForRespondentTse() {
+        when(pdfUploadService.convertRespondentTseIntoMultipartFile(any(), any(), anyString())).thenThrow(
+            new DocumentGenerationException(TEST));
+
+        assertThrows(DocumentGenerationException.class, () -> caseService.uploadRespondentTseAsPdf(
+            "", caseTestData.getCaseDetails(), caseTestData.getRespondentTse(), ""));
     }
 }

@@ -28,7 +28,7 @@ import static uk.gov.hmcts.ecm.common.model.helper.Constants.CLAIMANT_TITLE;
 import static uk.gov.hmcts.ecm.common.model.helper.Constants.IN_PROGRESS;
 import static uk.gov.hmcts.ecm.common.model.helper.Constants.NO;
 import static uk.gov.hmcts.ecm.common.model.helper.Constants.STORED;
-import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.CLAIMANT_CORRESPONDENCE_DOCUMENT;
+import static uk.gov.hmcts.ecm.common.model.helper.DocumentConstants.CLAIMANT_CORRESPONDENCE;
 import static uk.gov.hmcts.reform.et.syaapi.constants.EtSyaConstants.YES;
 import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.getApplicationDoc;
 import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.getCurrentDateTime;
@@ -106,7 +106,7 @@ public class StoredRespondToApplicationService {
         // Supporting Material File
         if (request.getSupportingMaterialFile() != null) {
             DocumentTypeItem documentTypeItem = caseDocumentService.createDocumentTypeItem(
-                CLAIMANT_CORRESPONDENCE_DOCUMENT,
+                CLAIMANT_CORRESPONDENCE,
                 request.getSupportingMaterialFile()
             );
             documentTypeItem.getValue().setShortDescription("Response to " + appType.getType());
@@ -153,7 +153,8 @@ public class StoredRespondToApplicationService {
                     authorization,
                     caseData,
                     request,
-                    application.getType()
+                    application.getType(),
+                    CLAIMANT_TITLE
                 );
             } catch (CaseDocumentException | DocumentGenerationException e) {
                 log.error("Couldn't upload pdf of TSE application " + e.getMessage());

@@ -43,7 +43,7 @@ import static uk.gov.hmcts.ecm.common.model.helper.Constants.SUBMITTED;
 import static uk.gov.hmcts.ecm.common.model.helper.Constants.VIEWED;
 import static uk.gov.hmcts.reform.et.syaapi.enums.CaseEvent.UPDATE_NOTIFICATION_RESPONSE;
 import static uk.gov.hmcts.reform.et.syaapi.enums.CaseEvent.UPDATE_NOTIFICATION_STATE;
-import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.CLAIMANT;
+import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.CLAIMANT_TITLE;
 import static uk.gov.hmcts.reform.et.syaapi.service.utils.TestConstants.NO;
 import static uk.gov.hmcts.reform.et.syaapi.service.utils.TestConstants.TEST_SERVICE_AUTH_TOKEN;
 import static uk.gov.hmcts.reform.et.syaapi.service.utils.TestConstants.YES;
@@ -103,7 +103,7 @@ class SendNotificationServiceTest {
 
         List<PseResponseTypeItem> pseResponseItems = List.of(PseResponseTypeItem.builder().id(ID).value(
             PseResponseType.builder()
-                .from(CLAIMANT)
+                .from(CLAIMANT_TITLE)
                 .hasSupportingMaterial(NO)
                 .response("Some response text")
                 .responseState(null)
@@ -273,7 +273,7 @@ class SendNotificationServiceTest {
             .id(ID)
             .value(
                 PseResponseType.builder()
-                    .from(CLAIMANT)
+                    .from(CLAIMANT_TITLE)
                     .response("RESPONSE")
                     .hasSupportingMaterial(NO)
                     .build()
@@ -347,7 +347,7 @@ class SendNotificationServiceTest {
             .id(ID)
             .value(
                 PseResponseType.builder()
-                    .from(CLAIMANT)
+                    .from(CLAIMANT_TITLE)
                     .hasSupportingMaterial(YES)
                     .response("RESPONSE")
                     .build()

@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class ClaimantResponseCya implements TornadoDocument {
+public class AppResponseCitizen implements TornadoDocument {
     String applicant;
     String caseNumber;
     String applicationType;

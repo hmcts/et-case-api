@@ -33,7 +33,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.CLAIMANT;
+import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.CLAIMANT_TITLE;
 import static uk.gov.hmcts.reform.et.syaapi.service.utils.TestConstants.NO;
 import static uk.gov.hmcts.reform.et.syaapi.service.utils.TestConstants.TEST_SERVICE_AUTH_TOKEN;
 import static uk.gov.hmcts.reform.et.syaapi.service.utils.TestConstants.YES;
@@ -94,7 +94,7 @@ class StoredRespondToTribunalServiceTest {
     @Test
     void storeRespondToTribunalShouldReturnCaseDetails() {
         PseResponseType pseResponseType = PseResponseType.builder()
-            .from(CLAIMANT)
+            .from(CLAIMANT_TITLE)
             .hasSupportingMaterial(YES)
             .response("Response Text")
             .build();
@@ -125,7 +125,7 @@ class StoredRespondToTribunalServiceTest {
 
         assertThat(actual.getDate()).isEqualTo(TseApplicationHelper.formatCurrentDate(LocalDate.now()));
         assertThat(actual.getResponse()).isEqualTo("Response Text");
-        assertThat(actual.getFrom()).isEqualTo(CLAIMANT);
+        assertThat(actual.getFrom()).isEqualTo(CLAIMANT_TITLE);
         assertThat(notification.getRespondNotificationTypeCollection().get(0).getValue().getIsClaimantResponseDue())
             .isNull();
     }

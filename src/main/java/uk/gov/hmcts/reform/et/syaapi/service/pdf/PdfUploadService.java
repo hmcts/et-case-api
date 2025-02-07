@@ -13,16 +13,18 @@ import uk.gov.hmcts.ecm.common.service.pdf.PdfService;
 import uk.gov.hmcts.et.common.model.ccd.CaseData;
 import uk.gov.hmcts.et.common.model.ccd.items.GenericTseApplicationType;
 import uk.gov.hmcts.et.common.model.ccd.items.RespondentSumTypeItem;
+import uk.gov.hmcts.et.common.model.ccd.types.RespondentTse;
 import uk.gov.hmcts.et.common.model.ccd.types.TseRespondType;
 import uk.gov.hmcts.et.common.model.ccd.types.citizenhub.ClaimantTse;
 import uk.gov.hmcts.reform.et.syaapi.models.AcasCertificate;
-import uk.gov.hmcts.reform.et.syaapi.models.ClaimantResponseCya;
+import uk.gov.hmcts.reform.et.syaapi.models.AppResponseCitizen;
 import uk.gov.hmcts.reform.et.syaapi.models.GenericTseApplication;
 import uk.gov.hmcts.reform.et.syaapi.models.RespondToApplicationRequest;
 import uk.gov.hmcts.reform.et.syaapi.service.DocumentGenerationException;
 import uk.gov.hmcts.reform.et.syaapi.service.DocumentGenerationService;
 import uk.gov.hmcts.reform.et.syaapi.service.utils.ClaimantTseUtil;
 import uk.gov.hmcts.reform.et.syaapi.service.utils.GenericServiceUtil;
+import uk.gov.hmcts.reform.et.syaapi.service.utils.RespondentTseUtil;
 import uk.gov.hmcts.reform.idam.client.models.UserInfo;
 
 import java.time.LocalDate;
@@ -202,7 +204,9 @@ public class PdfUploadService {
      * Converts a given object of type {@link ClaimantTse} to a {@link PdfDecodedMultipartFile}.
      * Firstly by converting to a pdf byte array and then wrapping within the return object.
      *
-     * @param claimantTse {@link CaseData} object that contains the {@link ClaimantTse} object to be converted.
+     * @param claimantTse the {@link ClaimantTse} object to be converted.
+     * @param caseReference used to TseApplication from ClaimantTse
+     * @param docName used for the name of the pdf document to be generated
      * @return {@link PdfDecodedMultipartFile} with the claimant tse CYA page in pdf format.
      * @throws DocumentGenerationException if there is an error generating the PDF.
      */
@@ -238,10 +242,11 @@ public class PdfUploadService {
      * @return {@link PdfDecodedMultipartFile} with the claimant response CYA page in pdf format.
      * @throws DocumentGenerationException if there is an error generating the PDF.
      */
-    public PdfDecodedMultipartFile convertClaimantResponseIntoMultipartFile(RespondToApplicationRequest request,
-                                                                            String description,
-                                                                            String ethosCaseReference,
-                                                                            GenericTseApplicationType application)
+    public PdfDecodedMultipartFile convertApplicationResponseIntoMultipartFile(RespondToApplicationRequest request,
+                                                                               String description,
+                                                                               String ethosCaseReference,
+                                                                               GenericTseApplicationType application,
+                                                                               String respondingUserType)
         throws DocumentGenerationException {
 
         String documentName = "Application %s  - %s - Claimant Response.pdf".formatted(
@@ -250,28 +255,31 @@ public class PdfUploadService {
         );
 
         return new PdfDecodedMultipartFile(
-            convertClaimantResponseToPdf(request, ethosCaseReference, description, documentName),
+            convertClaimantResponseToPdf(request, ethosCaseReference, description, documentName, respondingUserType),
             documentName,
             PDF_FILE_TIKA_CONTENT_TYPE,
             description
         );
     }
 
-    private byte[] convertClaimantResponseToPdf(RespondToApplicationRequest request, String ethosCaseReference,
-                                                String appTypeDescription, String documentName)
+    private byte[] convertClaimantResponseToPdf(RespondToApplicationRequest request,
+                                                String ethosCaseReference,
+                                                String appTypeDescription,
+                                                String documentName,
+                                                String respondingUserType)
         throws DocumentGenerationException {
-        TseRespondType claimantResponse = request.getResponse();
-        String fileName = claimantResponse.getSupportingMaterial() != null
+        TseRespondType applicationResponse = request.getResponse();
+        String fileName = applicationResponse.getSupportingMaterial() != null
             ? request.getSupportingMaterialFile().getDocumentFilename() : null;
 
-        ClaimantResponseCya claimantResponseCya = ClaimantResponseCya.builder()
+        AppResponseCitizen claimantResponseCya = AppResponseCitizen.builder()
             .caseNumber(ethosCaseReference)
-            .applicant(CLAIMANT_TITLE)
+            .applicant(respondingUserType)
             .applicationType(appTypeDescription)
             .applicationDate(UtilHelper.formatCurrentDate(LocalDate.now()))
-            .response(claimantResponse.getResponse())
+            .response(applicationResponse.getResponse())
             .fileName(fileName)
-            .copyToOtherPartyYesOrNo(claimantResponse.getCopyToOtherParty())
+            .copyToOtherPartyYesOrNo(applicationResponse.getCopyToOtherParty())
             .build();
 
         return documentGenerationService.genPdfDocument(
@@ -291,5 +299,39 @@ public class PdfUploadService {
             sanitizedName = sanitizedName.replace(charToReplace, " ");
         }
         return sanitizedName;
+    }
+
+    /**
+     * Converts a given object of type {@link RespondentTse} to a {@link PdfDecodedMultipartFile}.
+     * Firstly by converting to a pdf byte array and then wrapping within the return object.
+     *
+     * @param respondentTse the {@link RespondentTse} object to be converted.
+     * @param caseReference the caseReference used to identify TseApplication from RespondentTse.
+     * @param docName the name to be used for the pdf document to be generated.
+     * @return {@link PdfDecodedMultipartFile} with the claimant tse CYA page in pdf format.
+     * @throws DocumentGenerationException if there is an error generating the PDF.
+     */
+    public PdfDecodedMultipartFile convertRespondentTseIntoMultipartFile(
+        RespondentTse respondentTse,
+        String caseReference,
+        String docName)
+
+        throws DocumentGenerationException {
+
+        GenericTseApplication genericTseApplication =
+            RespondentTseUtil.getGenericTseApplicationFromRespondentTse(respondentTse, caseReference);
+
+        byte[] tseApplicationPdf = documentGenerationService.genPdfDocument(
+            contactTheTribunalPdfTemplate,
+            docName,
+            genericTseApplication
+        );
+
+        return new PdfDecodedMultipartFile(
+            tseApplicationPdf,
+            docName,
+            PDF_FILE_TIKA_CONTENT_TYPE,
+            TSE_FILENAME + APP_TYPE_MAP.get(respondentTse.getContactApplicationType())
+        );
     }
 }

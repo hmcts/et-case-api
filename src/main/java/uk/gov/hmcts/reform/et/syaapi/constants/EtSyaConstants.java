@@ -70,7 +70,6 @@ public final class EtSyaConstants {
     public static final DateTimeFormatter UK_LOCAL_DATE_PATTERN = DateTimeFormatter.ofPattern("dd MMM yyyy");
     public static final String UNASSIGNED_OFFICE = "Unassigned";
 
-    public static final String CLAIMANT_CORRESPONDENCE_DOCUMENT = "Claimant correspondence";
     public static final String YES = "Yes";
     public static final String NO = "No";
 

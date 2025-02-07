@@ -91,6 +91,18 @@ notifications:
   respondentCopyTypeA: ${RESPONDENT_COPY_A:a2ffb9b3-8bf7-4e9a-aab8-08a6c5a82636}
   respondentCopyTypeB: ${RESPONDENT_COPY_B:59ccc472-8f2e-43e4-b275-832f1c714eff}
   tribunalAcknowledgement: ${TRIBUNAL_ACKNOWLEDGEMENT:d82aa18a-1a3d-44af-91fa-565d178f5e0e}
+  respondentTseTypeCRespAckTemplateId: ${RESPONDENT_TSE_TYPE_C_RESP_ACK_TEMPLATE_ID:b0b56d54-2951-4370-94b8-0c6295a50c03}
+  cyRespondentTseTypeCRespAckTemplateId: ${CY_RESPONDENT_TSE_TYPE_C_RESP_ACK_TEMPLATE_ID:2588dc0b-4c73-4a0e-8338-47e8f27ddfdc}
+  respondentTseTypeBRespAckTemplateId: ${RESPONDENT_TSE_TYPE_B_RESP_ACK_TEMPLATE_ID:a5b466ce-0dfd-4312-a749-f8204c75566d}
+  cyRespondentTseTypeBRespAckTemplateId: ${CY_RESPONDENT_TSE_TYPE_B_RESP_ACK_TEMPLATE_ID:336ce2dd-4c30-44ea-a381-dba87ccb571f}
+  respondentTseTypeARespAckTemplateId: ${RESPONDENT_TSE_TYPE_A_RESP_ACK_TEMPLATE_ID:113de748-b0a8-40c8-a0c3-60e6e74fdd29}
+  cyRespondentTseTypeARespAckTemplateId: ${CY_RESPONDENT_TSE_TYPE_A_RESP_ACK_TEMPLATE_ID:9e0142b3-e098-481c-a545-cc5c886dbc5f}
+  respondentTseNoRespAckTemplateId: ${RESPONDENT_TSE_NO_RESP_ACK_TEMPLATE_ID:c9a66418-3d54-4222-8333-50cf551bd6b3}
+  cyRespondentTseNoRespAckTemplateId: ${CY_RESPONDENT_TSE_NO_RESP_ACK_TEMPLATE_ID:7197c5ab-238d-4a3c-9bc5-19b0b2ae569c}
+  respondentTseTypeAClaimantAckTemplateId: ${RESPONDENT_TSE_TYPE_A_CLAIMANT_ACK_TEMPLATE_ID:bfd00397-44d3-4b61-bdd2-2639043dc3e5}
+  cyRespondentTseTypeAClaimantAckTemplateId: ${CY_RESPONDENT_TSE_TYPE_A_CLAIMANT_ACK_TEMPLATE_ID:b037e493-16ef-4ad1-af46-df7666de2e53}
+  respondentTseTypeBClaimantAckTemplateId: ${RESPONDENT_TSE_TYPE_B_CLAIMANT_ACK_TEMPLATE_ID:f09e2e85-04bf-43cd-a959-4344924175c0}
+  cyRespondentTseTypeBClaimantAckTemplateId: ${CY_RESPONDENT_TSE_TYPE_B_CLAIMANT_ACK_TEMPLATE_ID:3c317fe0-f87f-4032-af2e-a50a57a7a601}
 
   et3SubmissionConfirmation: ${ET3_SUBMISSION_CONFIRMATION:16efc13b-3365-4bb8-aa27-5c0544645be8}
 

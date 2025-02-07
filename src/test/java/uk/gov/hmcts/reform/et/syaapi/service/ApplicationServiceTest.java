@@ -42,6 +42,8 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.CLAIMANT_TITLE;
+import static uk.gov.hmcts.reform.et.syaapi.helper.TseApplicationHelper.RESPONDENT_TITLE;
 import static uk.gov.hmcts.reform.et.syaapi.service.utils.TestConstants.TEST_SERVICE_AUTH_TOKEN;
 
 @SuppressWarnings({"PMD.SingularField", "PMD.TooManyMethods"})
@@ -92,7 +94,7 @@ class ApplicationServiceTest {
 
         when(featureToggleService.isWorkAllocationEnabled()).thenReturn(true);
 
-        doNothing().when(caseService).uploadTseSupportingDocument(any(), any(), any());
+        doNothing().when(caseService).uploadTseSupportingDocument(any(), any(), any(), any());
         doNothing().when(caseService).uploadTseCyaAsPdf(any(), any(), any(), any());
 
         when(caseService.triggerEvent(
@@ -100,6 +102,28 @@ class ApplicationServiceTest {
             eq(testData.getClaimantApplicationRequest().getCaseId()),
             eq(CaseEvent.SUBMIT_CLAIMANT_TSE),
             eq(testData.getClaimantApplicationRequest().getCaseTypeId()),
+            any()
+        )).thenReturn(testData.getCaseDetailsWithData());
+
+        when(caseService.submitUpdate(
+            eq(TEST_SERVICE_AUTH_TOKEN),
+            eq(testData.getClaimantApplicationRequest().getCaseId()),
+            any(),
+            eq(testData.getClaimantApplicationRequest().getCaseTypeId())
+        )).thenReturn(testData.getCaseDetailsWithData());
+
+        when(caseService.submitUpdate(
+            eq(TEST_SERVICE_AUTH_TOKEN),
+            eq(testData.getRespondentApplicationRequest().getCaseId()),
+            any(),
+            eq(testData.getRespondentApplicationRequest().getCaseTypeId())
+        )).thenReturn(testData.getCaseDetailsWithData());
+
+        when(caseService.triggerEvent(
+            eq(TEST_SERVICE_AUTH_TOKEN),
+            eq(testData.getRespondentApplicationRequest().getCaseId()),
+            eq(CaseEvent.SUBMIT_RESPONDENT_TSE),
+            eq(testData.getRespondentApplicationRequest().getCaseTypeId()),
             any()
         )).thenReturn(testData.getCaseDetailsWithData());
 
@@ -111,13 +135,6 @@ class ApplicationServiceTest {
         )).thenReturn(testData.getUpdateCaseEventResponse());
         DocumentTypeItem docType = DocumentTypeItem.builder().id("1").value(new DocumentType()).build();
         when(caseDocumentService.createDocumentTypeItem(any(), any())).thenReturn(docType);
-
-        when(caseService.submitUpdate(
-            eq(TEST_SERVICE_AUTH_TOKEN),
-            eq(testData.getClaimantApplicationRequest().getCaseId()),
-            any(),
-            eq(testData.getClaimantApplicationRequest().getCaseTypeId())
-        )).thenReturn(testData.getCaseDetailsWithData());
 
         ResponseEntity<ByteArrayResource> responseEntity =
             new ResponseEntity<>(HttpStatus.OK);
@@ -280,7 +297,8 @@ class ApplicationServiceTest {
                 eq(TEST_SERVICE_AUTH_TOKEN),
                 any(),
                 eq(testRequest),
-                any()
+                any(),
+                eq(CLAIMANT_TITLE)
             );
 
             verify(caseDetailsConverter, times(1)).caseDataContent(
@@ -307,7 +325,8 @@ class ApplicationServiceTest {
                 eq(TEST_SERVICE_AUTH_TOKEN),
                 any(),
                 eq(testRequest),
-                any()
+                any(),
+                eq(CLAIMANT_TITLE)
             );
 
             verify(caseDetailsConverter, times(1)).caseDataContent(
@@ -429,6 +448,198 @@ class ApplicationServiceTest {
         }
 
         private static Stream<Arguments> testNewStateAndResponseRequired() {
+            return Stream.of(
+                Arguments.of(true, "inProgress", "No"),
+                Arguments.of(false, INITIAL_STATE, YES)
+            );
+        }
+    }
+
+    @Test
+    void shouldSendRespondentEmailWithCorrectParameters() throws NotificationClientException {
+        applicationService.submitRespondentApplication(TEST_SERVICE_AUTH_TOKEN,
+                                             testData.getRespondentApplicationRequest());
+
+        ArgumentCaptor<CoreEmailDetails> argument = ArgumentCaptor.forClass(CoreEmailDetails.class);
+        verify(notificationService, times(1)).sendRespondentAppAcknowledgementEmailToRespondent(
+            argument.capture(),
+            any()
+        );
+
+        CoreEmailDetails coreEmailDetails = argument.getValue();
+        assertThat(coreEmailDetails.caseData()).isNotNull();
+        assertThat(coreEmailDetails.claimant()).isEqualTo(CLAIMANT);
+        assertThat(coreEmailDetails.caseNumber()).isEqualTo(CASE_REF);
+        assertThat(coreEmailDetails.respondentNames()).isEqualTo(RESPONDENT_LIST);
+        assertThat(coreEmailDetails.hearingDate()).isEqualTo(NOT_SET);
+        assertThat(coreEmailDetails.caseId()).isEqualTo(CASE_ID);
+    }
+
+    @Nested
+    class RespondToClaimantApplicationTests {
+        RespondToApplicationRequest testRequest;
+        StartEventResponse updateCaseEventResponse;
+
+        @BeforeEach
+        void setUp() {
+            testRequest = testData.getRespondToApplicationRequest();
+            updateCaseEventResponse = testData.getUpdateCaseEventResponse();
+            when(caseService.startUpdate(
+                TEST_SERVICE_AUTH_TOKEN,
+                testRequest.getCaseId(),
+                testRequest.getCaseTypeId(),
+                CaseEvent.RESPONDENT_TSE_RESPOND
+            )).thenReturn(updateCaseEventResponse);
+        }
+
+        @Test
+        void shouldSubmitResponseToClaimantApplication() {
+            applicationService.respondToClaimantApplication(
+                TEST_SERVICE_AUTH_TOKEN,
+                testRequest
+            );
+
+            verify(caseDetailsConverter, times(1)).caseDataContent(
+                any(),
+                any()
+            );
+        }
+
+        @Test
+        void shouldSubmitResponseToClaimantApplicationAndSendCopy()
+            throws CaseDocumentException, DocumentGenerationException {
+
+            testRequest.getResponse().setCopyToOtherParty(YES);
+
+            applicationService.respondToClaimantApplication(
+                TEST_SERVICE_AUTH_TOKEN,
+                testRequest
+            );
+
+            verify(caseService, times(1)).createResponsePdf(
+                eq(TEST_SERVICE_AUTH_TOKEN),
+                any(),
+                any(),
+                any(),
+                eq(RESPONDENT_TITLE)
+            );
+
+            verify(caseDetailsConverter, times(1)).caseDataContent(
+                any(),
+                any()
+            );
+        }
+
+        @Test
+        void shouldSubmitResponseToClaimantApplicationWhenOptionalFileNotProvided()
+            throws CaseDocumentException, DocumentGenerationException {
+            testRequest.setSupportingMaterialFile(null);
+            TseRespondType response = testRequest.getResponse();
+            response.setSupportingMaterial(null);
+            response.setCopyToOtherParty(YES);
+            response.setCopyNoGiveDetails(null);
+
+            applicationService.respondToClaimantApplication(
+                TEST_SERVICE_AUTH_TOKEN,
+                testRequest
+            );
+
+            verify(caseService, times(1)).createResponsePdf(
+                eq(TEST_SERVICE_AUTH_TOKEN),
+                any(),
+                eq(testRequest),
+                any(),
+                eq(RESPONDENT_TITLE)
+            );
+
+            verify(caseDetailsConverter, times(1)).caseDataContent(
+                any(),
+                any()
+            );
+        }
+
+        @Test
+        void shouldNotSubmitResponseToClaimantApplication() {
+            testRequest.setApplicationId("12");
+
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> applicationService.respondToClaimantApplication(
+                    TEST_SERVICE_AUTH_TOKEN,
+                    testRequest
+                )
+            );
+
+            verify(caseDetailsConverter, times(0)).caseDataContent(
+                any(),
+                any()
+            );
+        }
+
+        @Test
+        void shouldThrowErrorWhenSavingClaimantApplication() {
+            when(caseService.submitUpdate(
+                eq(TEST_SERVICE_AUTH_TOKEN),
+                eq(testRequest.getCaseId()),
+                any(),
+                any()
+            )).thenThrow(new JSONException("Could not save response"));
+
+            assertThrows(
+                JSONException.class,
+                () -> applicationService.respondToClaimantApplication(
+                    TEST_SERVICE_AUTH_TOKEN,
+                    testRequest
+                )
+            );
+        }
+
+        @Test
+        void shouldSendResponseEmailsToClaimantWithCorrectParameters() {
+            applicationService.respondToClaimantApplication(
+                TEST_SERVICE_AUTH_TOKEN,
+                testRequest
+            );
+
+            ArgumentCaptor<CoreEmailDetails> argument = ArgumentCaptor.forClass(CoreEmailDetails.class);
+            verify(notificationService, times(1)).sendRespondentResponseEmailToRespondent(
+                argument.capture(),
+                eq("Amend response"),
+                eq("No"),
+                eq(false)
+            );
+
+            CoreEmailDetails coreEmailDetails = argument.getValue();
+            assertThat(coreEmailDetails.caseData()).isNotNull();
+            assertThat(coreEmailDetails.claimant()).isEqualTo(CLAIMANT);
+            assertThat(coreEmailDetails.caseNumber()).isEqualTo(CASE_ID); // says case_id but is case ethos number
+            assertThat(coreEmailDetails.respondentNames()).isEmpty();
+            assertThat(coreEmailDetails.hearingDate()).isEqualTo(NOT_SET);
+            assertThat(coreEmailDetails.caseId()).isEqualTo("12345");
+        }
+
+        @ParameterizedTest
+        @MethodSource
+        void testNewStateAndResponseRequiredForClaimant(boolean isRespondingToRequestOrOrder,
+                                                        String expectedApplicationState,
+                                                        String expectedRespondentResponseRequired) {
+            testRequest.setRespondingToRequestOrOrder(isRespondingToRequestOrOrder);
+            GenericTseApplicationType application = GenericTseApplicationType.builder()
+                .respondentResponseRequired(YES).applicationState(INITIAL_STATE).build();
+
+            MockedStatic<TseApplicationHelper> mockStatic = mockStatic(TseApplicationHelper.class);
+            mockStatic.when(() -> TseApplicationHelper.getSelectedApplication(any(), any()))
+                .thenReturn(GenericTseApplicationTypeItem.builder().value(application).build());
+
+            applicationService.respondToClaimantApplication(TEST_SERVICE_AUTH_TOKEN, testRequest);
+
+            assertThat(application.getApplicationState()).isEqualTo(expectedApplicationState);
+            assertThat(application.getRespondentResponseRequired()).isEqualTo(expectedRespondentResponseRequired);
+
+            mockStatic.close();
+        }
+
+        private static Stream<Arguments> testNewStateAndResponseRequiredForClaimant() {
             return Stream.of(
                 Arguments.of(true, "inProgress", "No"),
                 Arguments.of(false, INITIAL_STATE, YES)

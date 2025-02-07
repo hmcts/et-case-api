@@ -7,6 +7,7 @@ import uk.gov.hmcts.et.common.model.ccd.Et1CaseData;
 import uk.gov.hmcts.et.common.model.ccd.Et3Request;
 import uk.gov.hmcts.et.common.model.ccd.items.DocumentTypeItem;
 import uk.gov.hmcts.et.common.model.ccd.types.ClaimantIndType;
+import uk.gov.hmcts.et.common.model.ccd.types.RespondentTse;
 import uk.gov.hmcts.et.common.model.ccd.types.citizenhub.ClaimantTse;
 import uk.gov.hmcts.reform.ccd.client.model.CaseDataContent;
 import uk.gov.hmcts.reform.ccd.client.model.CaseDetails;
@@ -48,6 +49,10 @@ public final class CaseTestData {
     private final ClaimantTse claimantApplication = ResourceLoader.fromString(
         "responses/claimantTse.json",
         ClaimantTse.class
+    );
+    private final RespondentTse respondentApplication = ResourceLoader.fromString(
+        "responses/respondentTse.json",
+        RespondentTse.class
     );
     private final CaseRequest caseRequest = ResourceLoader.fromString(
         "requests/caseRequest.json",
@@ -121,6 +126,11 @@ public final class CaseTestData {
     private final ClaimantTse claimantTse = ResourceLoader.fromString(
         "requests/claimantTse.json",
         ClaimantTse.class
+    );
+
+    private final RespondentTse respondentTse = ResourceLoader.fromString(
+        "requests/respondentTse.json",
+        RespondentTse.class
     );
 
     private final Et3Request et3Request = ResourceLoader.fromString(
