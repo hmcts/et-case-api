@@ -1,0 +1,498 @@
+{
+  "provider": {
+    "name": "ccd_data_store_api_cases"
+  },
+  "consumer": {
+    "name": "et_sya_api_service"
+  },
+  "interactions": [
+    {
+      "description": "Provider receives a GET /cases/{caseId} request from et-sya-api API",
+      "request": {
+        "method": "GET",
+        "path": "/cases/1593694526480033"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "case_type": "ET_EnglandWales",
+          "id": "1593694526480033",
+          "jurisdiction": "EMPLOYMENT",
+          "security_classification": "PUBLIC"
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            }
+          }
+        }
+      },
+      "providerStates": [
+        {
+          "name": "A Get Case is requested"
+        }
+      ]
+    },
+    {
+      "description": "A Start case for a Citizen by calling CCD API",
+      "request": {
+        "method": "GET",
+        "path": "/citizens/123456/jurisdictions/EMPLOYMENT/case-types/ET_EnglandWales/event-triggers/INITIATE_CASE_DRAFT/token",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "header": {
+            "Content-Type": {
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json"
+                }
+              ],
+              "combine": "AND"
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "case_details": {
+            "case_data": {
+
+            },
+            "case_type_id": "ET_EnglandWales",
+            "id": 1593694526480033,
+            "jurisdiction": "EMPLOYMENT"
+          },
+          "event_id": "INITIATE_CASE_DRAFT"
+        },
+        "matchingRules": {
+          "header": {
+            "Content-Type": {
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json"
+                }
+              ],
+              "combine": "AND"
+            }
+          },
+          "body": {
+            "$.event_id": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.token": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.case_details.id": {
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.case_details.jurisdiction": {
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[/^[A-Za-z_]+$/]+"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.case_details.callback_response_status": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.case_details.case_type_id": {
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[/^[A-Za-z_]+$/]+"
+                }
+              ],
+              "combine": "AND"
+            }
+          }
+        }
+      },
+      "providerStates": [
+        {
+          "name": "A Start case for a Citizen is requested",
+          "params": {
+            "jurisdictionId": "EMPLOYMENT",
+            "caseType": "ET_EnglandWales"
+          }
+        }
+      ]
+    },
+    {
+      "description": "A Start event for a Citizen against CCD API",
+      "request": {
+        "method": "GET",
+        "path": "/citizens/123456/jurisdictions/EMPLOYMENT/case-types/ET_EnglandWales/cases/1593694526480033/event-triggers/UPDATE_CASE_DRAFT/token",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "header": {
+            "Content-Type": {
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json"
+                }
+              ],
+              "combine": "AND"
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "case_details": {
+            "case_data": {
+
+            },
+            "case_type_id": "ET_EnglandWales",
+            "id": 1593694526480033,
+            "jurisdiction": "EMPLOYMENT"
+          },
+          "event_id": "UPDATE_CASE_DRAFT"
+        },
+        "matchingRules": {
+          "header": {
+            "Content-Type": {
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json"
+                }
+              ],
+              "combine": "AND"
+            }
+          },
+          "body": {
+            "$.event_id": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.token": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.case_details.id": {
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.case_details.jurisdiction": {
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[/^[A-Za-z_]+$/]+"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.case_details.callback_response_status": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.case_details.case_type_id": {
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[/^[A-Za-z_]+$/]+"
+                }
+              ],
+              "combine": "AND"
+            }
+          }
+        }
+      },
+      "providerStates": [
+        {
+          "name": "A Start event for a Citizen is requested",
+          "params": {
+            "jurisdictionId": "EMPLOYMENT",
+            "caseType": "ET_EnglandWales"
+          }
+        }
+      ]
+    },
+    {
+      "description": "A Submit case for a Citizen by calling CCD API",
+      "request": {
+        "method": "POST",
+        "path": "/citizens/123456/jurisdictions/EMPLOYMENT/case-types/ET_EnglandWales/cases",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "query": {
+          "ignore-warning": [
+            "true"
+          ]
+        },
+        "matchingRules": {
+          "header": {
+            "Content-Type": {
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json"
+                }
+              ],
+              "combine": "AND"
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "case_data": {
+            "caseSource": "Manually Created",
+            "caseType": "Single"
+          },
+          "jurisdiction": "EMPLOYMENT",
+          "id": 1593694526480033,
+          "state": "ADMISSION_TO_HMCTS",
+          "case_type_id": "ET_EnglandWales"
+        },
+        "matchingRules": {
+          "header": {
+            "Content-Type": {
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json"
+                }
+              ],
+              "combine": "AND"
+            }
+          },
+          "body": {
+            "$.id": {
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.jurisdiction": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.state": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.case_data.caseType": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.case_data.caseSource": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            }
+          }
+        }
+      },
+      "providerStates": [
+        {
+          "name": "A Submit case for a Citizen is requested",
+          "params": {
+            "jurisdictionId": "EMPLOYMENT",
+            "caseType": "ET_EnglandWales"
+          }
+        }
+      ]
+    },
+    {
+      "description": "A Submit event for a Citizen against CCD API",
+      "request": {
+        "method": "POST",
+        "path": "/citizens/123456/jurisdictions/EMPLOYMENT/case-types/ET_EnglandWales/cases/1593694526480033/events",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "query": {
+          "ignore-warning": [
+            "true"
+          ]
+        },
+        "matchingRules": {
+          "header": {
+            "Content-Type": {
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json"
+                }
+              ],
+              "combine": "AND"
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "case_data": {
+            "caseSource": "Manually Created",
+            "caseType": "Single"
+          },
+          "case_type_id": "ET_EnglandWales",
+          "id": 1593694526480033,
+          "jurisdiction": "EMPLOYMENT",
+          "state": "ADMISSION_TO_HMCTS"
+        },
+        "matchingRules": {
+          "header": {
+            "Content-Type": {
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json"
+                }
+              ],
+              "combine": "AND"
+            }
+          },
+          "body": {
+            "$.id": {
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.jurisdiction": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.state": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.case_data.caseType": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.case_data.caseSource": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            }
+          }
+        }
+      },
+      "providerStates": [
+        {
+          "name": "A Submit event for a Citizen is requested",
+          "params": {
+            "jurisdictionId": "EMPLOYMENT",
+            "caseType": "ET_EnglandWales"
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "3.0.0"
+    },
+    "pact-jvm": {
+      "version": "4.1.41"
+    }
+  }
+}

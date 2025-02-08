@@ -43,6 +43,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -307,6 +308,9 @@ public class CaseService {
         StartEventResponse startEventResponse = startUpdate(authorization, caseRequest.getCaseId(),
                                                             caseRequest.getCaseTypeId(), SUBMIT_CASE_DRAFT
         );
+
+        //Remove case time to live to avoid case being deleted
+        startEventResponse.getCaseDetails().getData().put("TTL", new HashMap<>());
         CaseData caseData1 = EmployeeObjectMapper.convertCaseDataMapToCaseDataObject(
             startEventResponse.getCaseDetails().getData());
         enrichCaseDataWithJurisdictionCodes(caseData1);
@@ -318,6 +322,7 @@ public class CaseService {
         caseData1.setClaimantPcqId(caseRequest.getCaseData().get("claimantPcqId") == null ? "" :
                                       caseRequest.getCaseData().get("claimantPcqId").toString());
         caseData1.setEt1OnlineSubmission(YES);
+
         ObjectMapper objectMapper = new ObjectMapper();
         CaseDetailsConverter caseDetailsConverter = new CaseDetailsConverter(objectMapper);
         try {

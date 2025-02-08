@@ -1,0 +1,68 @@
+{
+  "provider": {
+    "name": "etsyaService_pdfgenerationEndpoint"
+  },
+  "consumer": {
+    "name": "et_sya_api_service"
+  },
+  "interactions": [
+    {
+      "description": "a request to generate a pdf document with a template",
+      "request": {
+        "method": "POST",
+        "path": "/pdfs",
+        "headers": {
+          "ServiceAuthorization": "someServiceAuthToken",
+          "Content-Type": "application/vnd.uk.gov.hmcts.pdf-service.v2+json; charset=UTF-8"
+        },
+        "body": {
+          "testMessage": "Hello World"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/pdf"
+        },
+        "body": "",
+        "matchingRules": {
+          "body": {
+            "$": {
+              "matchers": [
+                {
+                  "match": "contentType",
+                  "value": "application/octet-stream"
+                }
+              ],
+              "combine": "AND"
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/pdf"
+                }
+              ],
+              "combine": "AND"
+            }
+          }
+        }
+      },
+      "providerStates": [
+        {
+          "name": "A request to generate a pdf document"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "3.0.0"
+    },
+    "pact-jvm": {
+      "version": "4.1.41"
+    }
+  }
+}

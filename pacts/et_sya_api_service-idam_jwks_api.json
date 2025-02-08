@@ -1,0 +1,111 @@
+{
+  "provider": {
+    "name": "idam_jwks_api"
+  },
+  "consumer": {
+    "name": "et_sya_api_service"
+  },
+  "interactions": [
+    {
+      "description": "Provider receives a token request request from et-sya-api API",
+      "request": {
+        "method": "GET",
+        "path": "/o/jwks"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Authorization": "Bearer UserAuthToken",
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "body": {
+          "keys": [
+            {
+              "kty": "RSA",
+              "e": "AQAB",
+              "use": "Public Key Use1",
+              "kid": "KeyId1",
+              "n": "someToken"
+            }
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.keys": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.keys[*].kid": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.keys[*].kty": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.keys[*].e": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.keys[*].use": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            },
+            "$.keys[*].n": {
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ],
+              "combine": "AND"
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json(;\\s?charset=[\\w\\-]+)?"
+                }
+              ],
+              "combine": "AND"
+            }
+          }
+        }
+      },
+      "providerStates": [
+        {
+          "name": "a case exists"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "3.0.0"
+    },
+    "pact-jvm": {
+      "version": "4.1.41"
+    }
+  }
+}
