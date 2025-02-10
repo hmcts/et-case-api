@@ -277,7 +277,7 @@ dependencies {
     exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     exclude group: 'com.vaadin.external.google', module: 'android-json'
   }
-  testImplementation group: 'nl.jqno.equalsverifier', name: 'equalsverifier', version: '3.17.5'
+  testImplementation group: 'nl.jqno.equalsverifier', name: 'equalsverifier', version: '3.19'
   testImplementation('org.assertj:assertj-core:3.27.3')
   testImplementation group: 'io.rest-assured', name: 'rest-assured'
   testImplementation group: 'net.javacrumbs.json-unit', name: 'json-unit', version: '4.1.0'
